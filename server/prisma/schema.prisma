@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  nickname    String
+  bio         String?
+  yandexId    String?   @unique
+  tracks      Track[]   
+  likes       Like[]    
+  likedTracks Track[]   @relation("UserLikes")
+  comments    Comment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Track {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  audioUrl    String
+  coverUrl    String?   // Добавляем поле для обложки
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  artist      Artist?   @relation(fields: [artistId], references: [id])
+  artistId    Int?
+  genre       Genre     @relation(fields: [genreId], references: [id])
+  genreId     Int
+  likes       Like[]
+  likedBy     User[]    @relation("UserLikes")
+  comments    Comment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Artist {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  tracks      Track[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Genre {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  tracks Track[]
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  track     Track    @relation(fields: [trackId], references: [id])
+  trackId   Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, trackId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  track     Track    @relation(fields: [trackId], references: [id])
+  trackId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
