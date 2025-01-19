@@ -201,10 +201,4 @@ audiobridge/
 
 ---
 
-<div align="center">
 
-**Разработано с ❤️ командой AudioBridge**
-
-[Сообщить об ошибке](https://github.com/username/audiobridge/issues) · [Запросить функционал](https://github.com/username/audiobridge/issues) · [Документация API](https://api.audiobridge.dev)
-
-</div>
