@@ -7,18 +7,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  nickname    String
-  bio         String?
-  yandexId    String?   @unique
-  tracks      Track[]   
-  likes       Like[]    
-  likedTracks Track[]   @relation("UserLikes")
-  comments    Comment[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  nickname      String    @unique
+  password      String?   // Может быть null для пользователей через Яндекс
+  avatarUrl     String?
+  role          UserRole  @default(USER)
+  isActive      Boolean   @default(true)
+  
+  // OAuth Яндекс
+  yandexId      String?   @unique
+  accessToken   String?
+  refreshToken  String?   
+  
+  // Контент пользователя
+  tracks        Track[]   
+  likes         Like[]    
+  likedTracks   Track[]   @relation("UserLikes")
+  comments      Comment[]
+  
+  // Сообщения чата
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  // Плейлисты
+  playlists    Playlist[]
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
 }
 
 model Track {
@@ -26,53 +50,127 @@ model Track {
   title       String
   description String?
   audioUrl    String
-  coverUrl    String?   // Добавляем поле для обложки
-  user        User      @relation(fields: [userId], references: [id])
+  coverUrl    String?
+  duration    Int       // Длительность в секундах
+  plays       Int       @default(0)
+  
+  // Внешние данные из Яндекс.Музыки
+  yandexId    String?   @unique
+  
+  // Связи
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
   artist      Artist?   @relation(fields: [artistId], references: [id])
   artistId    Int?
   genre       Genre     @relation(fields: [genreId], references: [id])
   genreId     Int
+  
+  // Взаимодействия
   likes       Like[]
   likedBy     User[]    @relation("UserLikes")
   comments    Comment[]
+  
+  // Плейлисты
+  playlists   PlaylistTrack[]
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@map("tracks")
 }
 
 model Artist {
   id          Int       @id @default(autoincrement())
-  name        String
+  name        String    @unique
   description String?
+  imageUrl    String?
+  yandexId    String?   @unique
+  
   tracks      Track[]
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@map("artists")
 }
 
 model Genre {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  tracks Track[]
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  tracks      Track[]
+
+  @@map("genres")
 }
 
 model Like {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  track     Track    @relation(fields: [trackId], references: [id])
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
   trackId   Int
   createdAt DateTime @default(now())
 
   @@unique([userId, trackId])
+  @@map("likes")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  track     Track    @relation(fields: [trackId], references: [id])
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
   trackId   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("comments")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   Int
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId Int
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("messages")
+}
+
+model Playlist {
+  id          Int             @id @default(autoincrement())
+  name        String
+  description String?
+  coverUrl    String?
+  isPublic    Boolean         @default(true)
+  
+  // Владелец плейлиста
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  
+  // Треки в плейлисте
+  tracks      PlaylistTrack[]
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("playlists")
+}
+
+model PlaylistTrack {
+  id         Int      @id @default(autoincrement())
+  position   Int      // Позиция трека в плейлисте
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  playlistId Int
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  trackId    Int
+  addedAt    DateTime @default(now())
+
+  @@unique([playlistId, trackId])
+  @@map("playlist_tracks")
 }

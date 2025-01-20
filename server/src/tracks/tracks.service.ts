@@ -1,46 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTrackDto } from './dto/create-track.dto';
+import { UpdateTrackDto } from './dto/update-track.dto';
 
 @Injectable()
 export class TracksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: number, createTrackDto: CreateTrackDto & { audioUrl: string, coverUrl?: string }) {
-    const data: any = {
-      title: createTrackDto.title,
-      description: createTrackDto.description,
-      audioUrl: createTrackDto.audioUrl,
-      coverUrl: createTrackDto.coverUrl,
-      user: {
-        connect: { id: userId }
-      },
-      genre: {
-        connect: { id: createTrackDto.genreId }
-      }
-    };
-  
+  async create(createTrackDto: CreateTrackDto, userId: number) {
     return this.prisma.track.create({
-      data,
+      data: {
+        ...createTrackDto,
+        userId,
+      },
       include: {
         user: true,
+        artist: true,
         genre: true,
       },
     });
   }
 
-  async findAll() {
-    return this.prisma.track.findMany({
-      include: {
-        user: true,
-        genre: true,
-        _count: {
-          select: {
-            likes: true,
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [tracks, total] = await Promise.all([
+      this.prisma.track.findMany({
+        skip,
+        take: limit,
+        include: {
+          user: true,
+          artist: true,
+          genre: true,
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
           },
         },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.track.count(),
+    ]);
+
+    return {
+      data: tracks,
+      meta: {
+        total,
+        page,
+        limit,
+        pageCount: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async findOne(id: number) {
@@ -48,11 +62,20 @@ export class TracksService {
       where: { id },
       include: {
         user: true,
+        artist: true,
         genre: true,
-        likes: true,
         comments: {
           include: {
             user: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
       },
@@ -65,47 +88,59 @@ export class TracksService {
     return track;
   }
 
-  async toggleLike(trackId: number, userId: number) {
-    const like = await this.prisma.like.findFirst({
-      where: {
-        trackId,
-        userId,
-      },
+  async update(id: number, updateTrackDto: UpdateTrackDto, userId: number) {
+    const track = await this.prisma.track.findUnique({
+      where: { id },
+      select: { userId: true },
     });
 
-    if (like) {
-      await this.prisma.like.delete({
-        where: { id: like.id },
-      });
-      return { liked: false };
+    if (!track) {
+      throw new NotFoundException('Track not found');
     }
 
-    await this.prisma.like.create({
-      data: {
-        track: {
-          connect: { id: trackId }
-        },
-        user: {
-          connect: { id: userId }
-        }
-      },
-    });
-    return { liked: true };
-  }
+    if (track.userId !== userId) {
+      throw new ForbiddenException('You can only update your own tracks');
+    }
 
-  async addComment(trackId: number, userId: number, content: string) {
-    return this.prisma.comment.create({
-      data: {
-        content,
-        track: {
-          connect: { id: trackId }
-        },
-        user: {
-          connect: { id: userId }
-        }
-      },
+    return this.prisma.track.update({
+      where: { id },
+      data: updateTrackDto,
       include: {
         user: true,
+        artist: true,
+        genre: true,
+      },
+    });
+  }
+
+  async remove(id: number, userId: number) {
+    const track = await this.prisma.track.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!track) {
+      throw new NotFoundException('Track not found');
+    }
+
+    if (track.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own tracks');
+    }
+
+    await this.prisma.track.delete({
+      where: { id },
+    });
+
+    return { success: true };
+  }
+
+  async incrementPlays(id: number) {
+    return this.prisma.track.update({
+      where: { id },
+      data: {
+        plays: {
+          increment: 1,
+        },
       },
     });
   }

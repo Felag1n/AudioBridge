@@ -1,13 +1,24 @@
-import { IsString, IsOptional, Length } from 'class-validator';
+import { IsString, IsOptional, MinLength } from 'class-validator';
+import { UserRole } from '@prisma/client';
 
 export class UpdateUserDto {
   @IsString()
+  @MinLength(3)
   @IsOptional()
-  @Length(2, 30)
   nickname?: string;
 
   @IsString()
+  @MinLength(6)
   @IsOptional()
-  @Length(0, 500)
-  bio?: string;
+  password?: string;
+
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+
+  @IsOptional()
+  role?: UserRole;
+
+  @IsOptional()
+  isActive?: boolean;
 }
