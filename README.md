@@ -150,12 +150,122 @@ audiobridge/
 │   ├── store/           # Управление состоянием
 │   └── styles/          # Стили
 │
-└── server/              # Серверная часть
-    ├── prisma/          # Схема БД и миграции
-    ├── src/             # Исходный код
-    │   ├── modules/     # Модули приложения
-    │   └── main.ts      # Точка входа
-    └── test/            # Тесты
+└── server/
+├── prisma/
+│   ├── migrations/
+│   └── schema.prisma
+│
+├── src/
+│   ├── auth/
+│   │   ├── dto/
+│   │   │   ├── login.dto.ts
+│   │   │   └── register.dto.ts
+│   │   ├── guards/
+│   │   │   └── jwt-auth.guard.ts
+│   │   ├── strategies/
+│   │   │   ├── jwt.strategy.ts
+│   │   │   └── yandex.strategy.ts
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.ts
+│   │   └── auth.controller.ts
+│   │
+│   ├── users/
+│   │   ├── dto/
+│   │   │   ├── create-user.dto.ts
+│   │   │   └── update-user.dto.ts
+│   │   ├── users.module.ts
+│   │   ├── users.service.ts
+│   │   └── users.controller.ts
+│   │
+│   ├── tracks/
+│   │   ├── dto/
+│   │   │   ├── create-track.dto.ts
+│   │   │   └── update-track.dto.ts
+│   │   ├── tracks.module.ts
+│   │   ├── tracks.service.ts
+│   │   └── tracks.controller.ts
+│   │
+│   ├── artists/
+│   │   ├── dto/
+│   │   │   ├── create-artist.dto.ts
+│   │   │   └── update-artist.dto.ts
+│   │   ├── artists.module.ts
+│   │   ├── artists.service.ts
+│   │   └── artists.controller.ts
+│   │
+│   ├── comments/
+│   │   ├── dto/
+│   │   │   ├── create-comment.dto.ts
+│   │   │   └── update-comment.dto.ts
+│   │   ├── comments.module.ts
+│   │   ├── comments.service.ts
+│   │   └── comments.controller.ts
+│   │
+│   ├── chat/
+│   │   ├── dto/
+│   │   │   ├── create-message.dto.ts
+│   │   │   └── message.dto.ts
+│   │   ├── entities/
+│   │   │   └── message.entity.ts
+│   │   ├── chat.gateway.ts
+│   │   ├── chat.module.ts
+│   │   ├── chat.service.ts
+│   │   └── chat.controller.ts
+│   │
+│   ├── yandex-music/
+│   │   ├── dto/
+│   │   │   ├── track.dto.ts
+│   │   │   └── search.dto.ts
+│   │   ├── interfaces/
+│   │   │   └── yandex-music.interface.ts
+│   │   ├── yandex-music.module.ts
+│   │   ├── yandex-music.service.ts
+│   │   └── yandex-music.controller.ts
+│   │
+│   ├── files/
+│   │   ├── files.module.ts
+│   │   ├── files.service.ts
+│   │   └── files.controller.ts
+│   │
+│   ├── common/
+│   │   ├── decorators/
+│   │   │   ├── user.decorator.ts
+│   │   │   └── roles.decorator.ts
+│   │   ├── guards/
+│   │   │   └── roles.guard.ts
+│   │   ├── filters/
+│   │   │   └── http-exception.filter.ts
+│   │   └── interceptors/
+│   │       └── transform.interceptor.ts
+│   │
+│   ├── config/
+│   │   ├── configuration.ts
+│   │   └── validation.ts
+│   │
+│   ├── prisma/
+│   │   ├── prisma.module.ts
+│   │   └── prisma.service.ts
+│   │
+│   ├── app.module.ts
+│   └── main.ts
+│
+├── uploads/
+│   ├── tracks/
+│   └── images/
+│
+├── test/
+│   ├── jest-e2e.json
+│   └── app.e2e-spec.ts
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── .prettierrc
+├── .eslintrc.js
+├── nest-cli.json
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
 ## 🌐 Развертывание
