@@ -7,6 +7,8 @@ import { TracksModule } from './tracks/tracks.module';
 import { ArtistsModule } from './artists/artists.module';
 import { CommentsModule } from './comments/comments.module';
 import { ChatModule } from './chat/chat.module';
+import { YandexMusicModule } from './yandex-music/yandex-music.module';
+import { AppController } from './app.controller';
 import configuration from './config/configuration';
 
 @Module({
@@ -22,6 +24,8 @@ import configuration from './config/configuration';
     ArtistsModule,
     CommentsModule,
     ChatModule,
+    YandexMusicModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
