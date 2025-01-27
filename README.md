@@ -72,9 +72,7 @@ AudioBridge - это современная музыкальная платфо�
 
 ### Backend
 ```
-➤ NestJS + TypeScript
 ➤ PostgreSQL + Prisma
-➤ Redis
 ➤ Socket.IO
 ➤ JWT + OAuth
 ```
