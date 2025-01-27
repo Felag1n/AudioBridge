@@ -17,12 +17,12 @@ export function Header() {
             <UserButton />
           ) : (
             <>
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button variant="ghost" className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800">
                   Войти
                 </Button>
               </Link>
-              <Link href="/register">
+              <Link href="/auth/register">
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   Регистрация
                 </Button>
