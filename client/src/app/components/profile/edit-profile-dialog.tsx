@@ -8,10 +8,10 @@ import {
 } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AvatarUpload } from "../../components/avatar-upload"
 import { Loader2 } from "lucide-react"
-import { userApi } from "../../services/api"
+import { userApi } from "@/app/services/api"
 import { toast } from "sonner"
 
 export function EditProfileDialog() {
@@ -19,6 +19,17 @@ export function EditProfileDialog() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+
+  // Загружаем текущий никнейм при открытии диалога
+  useEffect(() => {
+    if (isOpen) {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const { username } = JSON.parse(userData);
+        setNickname(username || '');
+      }
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!nickname.trim()) {
@@ -35,7 +46,8 @@ export function EditProfileDialog() {
       toast.success("Профиль обновлен")
       setIsOpen(false)
     } catch (error) {
-      toast.error("Не удалось обновить профиль")
+      const errorMessage = error instanceof Error ? error.message : "Не удалось обновить профиль";
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }

@@ -5,18 +5,48 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.files.storage import default_storage
 from django.contrib.auth.models import User
 from .serializers import (
     UserRegistrationSerializer, 
     UserLoginSerializer,
     TrackSerializer,
-    UserLibrarySerializer
+    UserLibrarySerializer,
+    UserUpdateSerializer
 )
 from .models import Track, UserLibrary
 import logging
 
 logger = logging.getLogger(__name__)
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    try:
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            user = serializer.save()
+            
+            # Формируем URL для аватара
+            avatar_url = None
+            if hasattr(user, 'profile') and user.profile.avatar:
+                avatar_url = request.build_absolute_uri(user.profile.avatar.url)
+            
+            return Response({
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'avatar_url': avatar_url
+                }
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Error updating profile: {str(e)}")
+        return Response(
+            {'message': 'Ошибка при обновлении профиля'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 @api_view(['GET'])
 def api_root(request):
     return Response({

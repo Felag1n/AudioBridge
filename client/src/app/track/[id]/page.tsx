@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { trackApi } from "../../services/api"
+import { trackApi } from "@/app/services/api"
 import { 
   Heart, 
   MessageSquare, 

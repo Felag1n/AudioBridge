@@ -4,7 +4,6 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('music_api.urls')),
-    # Перенаправляем корневой URL на api/
+    path('api/', include('music_api.urls')),  # Все API запросы идут через /api/
     path('', RedirectView.as_view(url='/api/', permanent=True)),
 ]

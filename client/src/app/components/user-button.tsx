@@ -1,13 +1,41 @@
-import { User } from 'lucide-react'
-import Link from 'next/link'
+"use client"
+
+import { LogOut, User } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu"
+import { Button } from "@/app/components/ui/button"
+import { authApi } from "@/app/services/api"
+import Link from "next/link"
 
 export function UserButton() {
+  const handleLogout = () => {
+    authApi.logout()
+  }
+
   return (
-    <Link href="/profile" className="flex items-center gap-2 rounded-full bg-zinc-800 p-2 hover:bg-zinc-700">
-      <div className="h-8 w-8 rounded-full bg-zinc-700 flex items-center justify-center">
-        <User size={20} className="text-zinc-400" />
-      </div>
-      <span className="mr-2">Пользователь</span>
-    </Link>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <User className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <Link href="/profile">
+          <DropdownMenuItem>
+            <User className="mr-2 h-4 w-4" />
+            Профиль
+          </DropdownMenuItem>
+        </Link>
+        <DropdownMenuItem onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Выйти
+        </DropdownMenuItem>
+        
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

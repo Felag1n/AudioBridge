@@ -1,6 +1,6 @@
 'use client'
 
-import { AuthForm } from '../auth-form'
+import { AuthForm } from '@/app/auth/auth-form'
 
 export default function RegisterPage() {
   return (

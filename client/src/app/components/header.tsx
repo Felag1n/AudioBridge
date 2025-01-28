@@ -1,20 +1,80 @@
+"use client"
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { UserButton } from './user-button'
-import Link from 'next/link';
-import { Button } from './ui/button';
+import { Button } from './ui/button'
+import { isAuthenticated } from '@/app/services/api'
+
+interface User {
+  username: string;
+  email: string;
+}
+
 export function Header() {
-  // Здесь будет проверка авторизации пользователя
-  const isAuthenticated = false; // Временно для демонстрации
+  const [user, setUser] = useState<User | null>(null)
+  const [isAuth, setIsAuth] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const auth = isAuthenticated()
+      setIsAuth(auth)
+      
+      if (auth) {
+        const userData = localStorage.getItem('userData')
+        if (userData) {
+          setUser(JSON.parse(userData))
+        }
+      }
+    }
+
+    // Начальная проверка
+    checkAuth()
+
+    // Обновление при изменении localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userData' || e.key === 'token') {
+        checkAuth()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Дополнительное событие для обновления состояния
+    window.addEventListener('auth-change', checkAuth)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('auth-change', checkAuth)
+    }
+  }, [])
 
   return (
     <header className="border-b border-zinc-800 p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {/* Logo will be added here */}
+          <Link href="/" className="text-xl font-bold">
+            AudioBridge
+          </Link>
         </div>
         
         <div className="flex items-center gap-3">
-          {isAuthenticated ? (
-            <UserButton />
+          {isAuth && user ? (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 overflow-hidden rounded-full bg-zinc-800">
+                  <img
+                    src="/api/placeholder/32/32"
+                    alt={user.username}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <span className="text-sm font-medium text-zinc-100">
+                  {user.username}
+                </span>
+              </div>
+              <UserButton />
+            </div>
           ) : (
             <>
               <Link href="/auth/login">
@@ -32,5 +92,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  );
+  )
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -22,6 +22,17 @@ export function AuthForm({ mode }: AuthFormProps) {
     password: ''
   });
 
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuthed = await authApi.checkAuth();
+      if (isAuthed) {
+        router.push('/profile');
+      }
+    };
+    checkAuth();
+  }, [router]);
+
   const handleYandexLogin = () => {
     window.location.href = '/api/auth/yandex';
   };
@@ -38,17 +49,25 @@ export function AuthForm({ mode }: AuthFormProps) {
     setIsLoading(true);
 
     try {
+      let response;
       if (mode === 'register') {
-        await authApi.register(formData);
+        response = await authApi.register(formData);
         toast.success('Регистрация успешна!');
       } else {
-        await authApi.login({ 
+        response = await authApi.login({ 
           email: formData.email, 
           password: formData.password 
         });
         toast.success('Вход выполнен успешно!');
       }
-      router.push('/');
+      
+      // Store user data if needed
+      if (response.user) {
+        localStorage.setItem('userData', JSON.stringify(response.user));
+      }
+      
+      // Redirect to profile page
+      router.push('/profile');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Произошла ошибка');
     } finally {
