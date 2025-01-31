@@ -1,7 +1,7 @@
 'use client'
 
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useAudioPlayer } from '../hooks/use-audio-player'
 
 export function Player() {
@@ -19,6 +19,10 @@ export function Player() {
     playNext,
     playPrevious
   } = useAudioPlayer()
+
+  useEffect(() => {
+    setVolume(0.4) // Устанавливаем громкость на 40% при монтировании компонента
+  }, [setVolume])
 
   const formatTime = (time: number) => {
     if (!time) return '0:00'

@@ -1,96 +1,79 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { UserButton } from './user-button'
-import { Button } from './ui/button'
-import { isAuthenticated } from '@/app/services/api'
-
-interface User {
-  username: string;
-  email: string;
-}
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { UserButton } from './user-button';
+import { Button } from './ui/button';
+import { useAuth } from '@/app/components/contexts/auth-context';
 
 export function Header() {
-  const [user, setUser] = useState<User | null>(null)
-  const [isAuth, setIsAuth] = useState(false)
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const auth = isAuthenticated()
-      setIsAuth(auth)
-      
-      if (auth) {
-        const userData = localStorage.getItem('userData')
-        if (userData) {
-          setUser(JSON.parse(userData))
-        }
-      }
-    }
-
-    // Начальная проверка
-    checkAuth()
-
-    // Обновление при изменении localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'userData' || e.key === 'token') {
-        checkAuth()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    
-    // Дополнительное событие для обновления состояния
-    window.addEventListener('auth-change', checkAuth)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('auth-change', checkAuth)
-    }
-  }, [])
+  const fadeInOut = {
+    initial: { opacity: 0, y: -20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.3 }
+  };
 
   return (
-    <header className="border-b border-zinc-800 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xl font-bold">
-            AudioBridge
-          </Link>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {isAuth && user ? (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 overflow-hidden rounded-full bg-zinc-800">
-                  <img
-                    src="/api/placeholder/32/32"
-                    alt={user.username}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <span className="text-sm font-medium text-zinc-100">
-                  {user.username}
-                </span>
-              </div>
-              <UserButton />
-            </div>
-          ) : (
-            <>
-              <Link href="/auth/login">
-                <Button variant="ghost" className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800">
-                  Войти
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Регистрация
-                </Button>
-              </Link>
-            </>
-          )}
+    <motion.header 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-800"
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-end px-6 h-16">
+          <AnimatePresence mode="wait">
+            {!isLoading && (
+              user ? (
+                <motion.div
+                  key="user-profile"
+                  {...fadeInOut}
+                  className="flex items-center gap-2"
+                >
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 py-2"
+                  >
+                    <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-zinc-700">
+                      <img
+                        src="123.jpg"
+                        alt={user.username}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <span className="text-sm font-medium">
+                      {user.username}
+                    </span>
+                  </Button>
+                  <UserButton />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="auth-buttons"
+                  {...fadeInOut}
+                  className="flex items-center gap-2"
+                >
+                  <Link href="/auth/login">
+                    <Button 
+                      variant="ghost" 
+                      className="text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                    >
+                      Войти
+                    </Button>
+                  </Link>
+                  <Link href="/auth/register">
+                    <Button className="bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition-colors">
+                      Регистрация
+                    </Button>
+                  </Link>
+                </motion.div>
+              )
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </header>
-  )
+    </motion.header>
+  );
 }

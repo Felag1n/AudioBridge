@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "../../components/ui/button"
 import {
   Dialog,
@@ -13,23 +15,21 @@ import { AvatarUpload } from "../../components/avatar-upload"
 import { Loader2 } from "lucide-react"
 import { userApi } from "@/app/services/api"
 import { toast } from "sonner"
+import { useAuth } from '@/app/components/contexts/auth-context'
 
 export function EditProfileDialog() {
-  const [nickname, setNickname] = useState("")
+  const { user, setUser } = useAuth()
+  const [nickname, setNickname] = useState(user?.username || "")
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
   // Загружаем текущий никнейм при открытии диалога
   useEffect(() => {
-    if (isOpen) {
-      const userData = localStorage.getItem('userData');
-      if (userData) {
-        const { username } = JSON.parse(userData);
-        setNickname(username || '');
-      }
+    if (isOpen && user) {
+      setNickname(user.username || '')
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const handleSubmit = async () => {
     if (!nickname.trim()) {
@@ -43,6 +43,17 @@ export function EditProfileDialog() {
         nickname: nickname.trim(),
         avatar: avatarFile
       })
+
+      // Обновляем данные пользователя в контексте и localStorage
+      if (user) {
+        const updatedUserData = {
+          ...user,
+          username: nickname.trim()
+        }
+        localStorage.setItem('userData', JSON.stringify(updatedUserData))
+        setUser(updatedUserData)
+      }
+
       toast.success("Профиль обновлен")
       setIsOpen(false)
     } catch (error) {
@@ -65,7 +76,7 @@ export function EditProfileDialog() {
         <div className="grid gap-6 py-4">
           <div className="mx-auto">
             <AvatarUpload
-              currentAvatarUrl="/api/placeholder/96/96"
+              currentAvatarUrl={user?.avatarUrl || "/api/placeholder/96/96"}
               onAvatarChange={setAvatarFile}
             />
           </div>

@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 import { Button } from './components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { testTracks } from '@/app/components/data/testTracks'
+import { TrackRow } from '@/app/components/track-row'
 
 // Оставляем ваши существующие данные
 const genres = [
@@ -22,14 +24,6 @@ const albums = [
   { id: 3, name: 'Альбом 3', artist: 'Исполнитель 3', image: '/placeholder.jpg' },
   { id: 4, name: 'Альбом 4', artist: 'Исполнитель 4', image: '/placeholder.jpg' },
   { id: 5, name: 'Альбом 5', artist: 'Исполнитель 5', image: '/placeholder.jpg' },
-];
-
-const tracks = [
-  { id: 1, name: 'Трек 1', artist: 'Исполнитель 1', duration: '3:45' },
-  { id: 2, name: 'Трек 2', artist: 'Исполнитель 2', duration: '4:20' },
-  { id: 3, name: 'Трек 3', artist: 'Исполнитель 3', duration: '3:15' },
-  { id: 4, name: 'Трек 4', artist: 'Исполнитель 4', duration: '5:10' },
-  { id: 5, name: 'Трек 5', artist: 'Исполнитель 5', duration: '3:30' },
 ];
 
 function AlbumCard({ album }: { album: typeof albums[0] }) {
@@ -64,37 +58,6 @@ function AlbumCard({ album }: { album: typeof albums[0] }) {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
-  );
-}
-
-function TrackRow({ track, index }: { track: typeof tracks[0]; index: number }) {
-  return (
-    <motion.div 
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="group flex items-center gap-4 rounded-md p-2 hover:bg-zinc-800/50"
-    >
-      <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md">
-        <img 
-          src="/api/placeholder/48/48"
-          alt={track.name}
-          className="object-cover"
-        />
-        <motion.button 
-          initial={{ opacity: 0 }}
-          whileHover={{ scale: 1.1 }}
-          className="absolute inset-0 flex items-center justify-center bg-black/50 group-hover:opacity-100"
-        >
-          <AudioLines className="h-5 w-5" />
-        </motion.button>
-      </div>
-      <div className="flex-1">
-        <h4 className="font-medium">{track.name}</h4>
-        <p className="text-sm text-zinc-400">{track.artist}</p>
-      </div>
-      <div className="text-sm text-zinc-400">{track.duration}</div>
     </motion.div>
   );
 }
@@ -211,8 +174,8 @@ export default function Home() {
         <Card>
           <CardContent className="p-6">
             <div className="space-y-2">
-              {tracks.map((track, index) => (
-                <TrackRow key={track.id} track={track} index={index} />
+              {testTracks.map((track) => (
+                <TrackRow key={track.id} track={track} />
               ))}
             </div>
           </CardContent>
