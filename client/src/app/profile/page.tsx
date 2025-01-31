@@ -94,7 +94,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
-
+    
       {/* Вкладки с контентом */}
       <Tabs defaultValue="tracks" className="space-y-6">
         <TabsList>

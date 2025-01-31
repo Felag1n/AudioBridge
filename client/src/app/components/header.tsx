@@ -2,8 +2,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { UserButton } from './user-button';
-import { Button } from './ui/button';
+import { UserButton } from '@/app/components/user-button';
+import { Button } from '@/app/components/ui/button';
 import { useAuth } from '@/app/components/contexts/auth-context';
 
 export function Header() {
@@ -23,7 +23,11 @@ export function Header() {
       className="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-800"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-end px-6 h-16">
+        <div className="flex items-center justify-between px-6 h-16">
+          <div className="flex-1">
+            {/* Add your logo or other header content here */}
+          </div>
+          
           <AnimatePresence mode="wait">
             {!isLoading && (
               user ? (
@@ -32,13 +36,10 @@ export function Header() {
                   {...fadeInOut}
                   className="flex items-center gap-2"
                 >
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center gap-3 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 py-2"
-                  >
+                  <div className="flex items-center gap-3 text-zinc-400">
                     <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-zinc-700">
                       <img
-                        src="123.jpg"
+                        src={user.avatarUrl || "/default-avatar.jpg"}
                         alt={user.username}
                         className="h-full w-full object-cover"
                       />
@@ -46,7 +47,7 @@ export function Header() {
                     <span className="text-sm font-medium">
                       {user.username}
                     </span>
-                  </Button>
+                  </div>
                   <UserButton />
                 </motion.div>
               ) : (

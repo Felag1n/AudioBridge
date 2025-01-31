@@ -8,6 +8,7 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { authApi } from '@/app/services/api';
 import { toast } from 'sonner';
+import { useAuth } from '@/app/components/contexts/auth-context'; // Добавляем импорт useAuth
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -15,6 +16,7 @@ interface AuthFormProps {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const { setUser } = useAuth(); // Получаем setUser из контекста
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -22,7 +24,6 @@ export function AuthForm({ mode }: AuthFormProps) {
     password: ''
   });
 
-  // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
       const isAuthed = await authApi.checkAuth();
@@ -61,12 +62,13 @@ export function AuthForm({ mode }: AuthFormProps) {
         toast.success('Вход выполнен успешно!');
       }
       
-      // Store user data if needed
+      // Сохраняем данные пользователя
       if (response.user) {
         localStorage.setItem('userData', JSON.stringify(response.user));
+        setUser(response.user); // Обновляем состояние пользователя в контексте
+        window.dispatchEvent(new Event('auth-change')); // Вызываем событие auth-change
       }
       
-      // Redirect to profile page
       router.push('/profile');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Произошла ошибка');
@@ -167,14 +169,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           {mode === 'login' ? (
             <>
               Нет аккаунта?{' '}
-              <Link href="/register" className="text-purple-400 hover:underline">
+              <Link href="/auth/register" className="text-purple-400 hover:underline">
                 Зарегистрироваться
               </Link>
             </>
           ) : (
             <>
               Уже есть аккаунт?{' '}
-              <Link href="/login" className="text-purple-400 hover:underline">
+              <Link href="/auth/login" className="text-purple-400 hover:underline">
                 Войти
               </Link>
             </>
