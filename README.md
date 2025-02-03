@@ -1,5 +1,3 @@
-Вот улучшенная и структурированная версия вашего текста с акцентом на визуальную привлекательность и читаемость:
-
 ---
 
 <div align="center">
@@ -90,7 +88,7 @@
 2. **Установка зависимостей**:  
    - **Сервер (Django)**:  
      ```bash
-     cd server
+     cd backend
      python -m venv venv
      source venv/bin/activate  # На Windows: venv\Scripts\activate
      pip install -r requirements.txt
@@ -104,7 +102,7 @@
 3. **Настройка окружения**:  
    - **Сервер**:  
      ```bash
-     cp server/.env.example server/.env
+     cp backend/.env.example backend/.env
      ```  
    - **Клиент**:  
      ```bash
@@ -113,7 +111,7 @@
 
 4. **Настройка базы данных**:  
    ```bash
-   cd server
+   cd backend
    python manage.py migrate
    python manage.py createsuperuser
    ```
@@ -132,40 +130,29 @@
 
 ## 📂 **Структура проекта**  
 
-```
-audiobridge/
-├── client/               # Клиентская часть
-│   ├── components/       # React компоненты
-│   ├── pages/            # Страницы Next.js
-│   ├── store/            # Управление состоянием
-│   └── styles/           # Стили
-│
-├── backend/              # Основное Django приложение
-│   ├── __pycache__/      # Python кэш
-│   ├── __init__.py       
-│   ├── asgi.py           # ASGI конфигурация
+```bash
+.
+├── backend/              # Серверная часть (Django)
+│   ├── music_api/        # Приложение для работы с музыкой
 │   ├── settings.py       # Настройки Django
 │   ├── urls.py           # Основные URL
-│   └── wsgi.py           # WSGI конфигурация
+│   └── manage.py         # Django утилита управления
 │
-├── music_api/            # Приложение для работы с музыкой
-│   ├── __pycache__/      
-│   ├── migrations/       # Миграции базы данных
-│   ├── __init__.py
-│   ├── admin.py          # Настройки админ-панели
-│   ├── apps.py           # Конфигурация приложения
-│   ├── models.py         # Модели данных
-│   ├── serializers.py    # Сериализаторы DRF
-│   ├── tests.py          # Тесты
-│   ├── urls.py           # URL API
-│   └── views.py          # Представления API
+├── client/               # Клиентская часть (Next.js)
+│   ├── src/
+│   │   ├── components/   # UI-компоненты
+│   │   ├── pages/        # Страницы
+│   │   ├── services/     # API-запросы
+│   │   ├── store/        # Zustand-хранилище
+│   │   ├── hooks/        # Кастомные хуки
+│   │   ├── layouts/      # Компоненты макета
+│   └── tsconfig.json     # Конфигурация TypeScript
 │
 ├── venv/                 # Виртуальное окружение Python
-├── .gitignore
-├── db.sqlite3            # База данных SQLite
-├── manage.py             # Утилита управления Django
-├── README.md
-└── requirements.txt      # Зависимости Python
+├── db.sqlite3            # База данных (разработка)
+├── package.json          # Зависимости фронтенда
+├── requirements.txt      # Зависимости бэкенда
+└── README.md             # Этот файл
 ```
 
 ---
@@ -200,13 +187,9 @@ audiobridge/
    - Интеграционные тесты  
    - Настройка CI/CD  
 
-### **Рекомендации по разработке**:  
-- Следуйте принятым соглашениям по коду  
-- Используйте TypeScript для типизации  
-- Документируйте новый функционал  
-- Пишите тесты для нового кода  
-
 ---
+
+
 
 ## 📄 **Лицензия**  
 Проект распространяется под лицензией **MIT**. Подробности в файле **LICENSE**.  
