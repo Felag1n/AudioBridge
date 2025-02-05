@@ -8,6 +8,7 @@ import { EditProfileDialog } from "@/app/components/profile/edit-profile-dialog"
 import { AlbumCard } from "@/app/components/album-card"
 import { TrackRow } from "@/app/components/track-row"
 import { isAuthenticated } from "@/app/services/api"
+import { Avatar, AvatarImage, AvatarFallback } from "@/app/components/ui/avatar";
 
 interface UserProfile {
   username: string;
@@ -57,21 +58,23 @@ export default function ProfilePage() {
     <div className="space-y-8">
       {/* Профиль пользователя */}
       <div className="flex items-center gap-6">
-        <div className="h-32 w-32 overflow-hidden rounded-full bg-zinc-800">
-          <img
-            src="/api/placeholder/128/128"
-            alt="Аватар пользователя"
-            className="h-full w-full object-cover"
-          />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">{profile?.username || 'Пользователь'}</h1>
-          <p className="text-zinc-400">{profile?.email}</p>
-          <div className="mt-4 flex gap-3">
-            <EditProfileDialog />
-          </div>
-        </div>
-      </div>
+  <Avatar className="h-32 w-32 ring-2 ring-zinc-700">
+    <AvatarImage 
+      src={profile?.avatarUrl} 
+      alt={profile?.username || 'Пользователь'} 
+    />
+    <AvatarFallback>
+      {profile?.username?.[0] || 'U'}
+    </AvatarFallback>
+  </Avatar>
+  <div>
+    <h1 className="text-3xl font-bold">{profile?.username || 'Пользователь'}</h1>
+    <p className="text-zinc-400">{profile?.email}</p>
+    <div className="mt-4 flex gap-3">
+      <EditProfileDialog />
+    </div>
+  </div>
+</div>
 
       {/* Статистика */}
       <div className="grid grid-cols-3 gap-4">

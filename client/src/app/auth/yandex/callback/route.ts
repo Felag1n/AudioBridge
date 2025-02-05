@@ -1,55 +1,58 @@
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+const REDIRECT_URI = 'http://localhost:3001/auth/yandex/callback';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get('code');
-
-  if (!code) {
-    return new Response('No code provided', { status: 400 });
-  }
-
   try {
-    // Обмен кода на токен
-    const tokenResponse = await fetch('https://oauth.yandex.ru/token', {
+    const { searchParams } = new URL(request.url);
+    const code = searchParams.get('code');
+
+    if (!code) {
+      return new NextResponse('No code provided', { status: 400 });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/yandex/`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
+      body: JSON.stringify({
         code,
-        client_id: process.env.YANDEX_CLIENT_ID!,
-        client_secret: process.env.YANDEX_CLIENT_SECRET!,
+        redirect_uri: REDIRECT_URI
       }),
     });
 
-    const tokenData = await tokenResponse.json();
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error from backend:', errorText);
+      return new NextResponse(
+        'Authentication failed: ' + (errorText.substring(0, 100) + '...'), 
+        { status: response.status }
+      );
+    }
 
-    // Получение информации о пользователе
-    const userResponse = await fetch('https://login.yandex.ru/info', {
-      headers: {
-        Authorization: `OAuth ${tokenData.access_token}`,
-      },
-    });
+    const data = await response.json();
 
-    const userData = await userResponse.json();
+    if (data.user) {
+      localStorage.setItem('userData', JSON.stringify(data.user));
+    }
 
-    // Создаем или обновляем пользователя в базе данных
-    // TODO: Добавить призму и создание пользователя
+    if (data.token) {
+      cookies().set('token', data.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
 
-    // Устанавливаем куки с токеном
-    const cookieStore = cookies();
-    cookieStore.set('token', tokenData.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 дней
-    });
-
-    // Редирект на главную страницу
-    return redirect('/');
+    return NextResponse.redirect(new URL('/profile', request.url));
   } catch (error) {
     console.error('Auth error:', error);
-    return new Response('Authentication failed', { status: 500 });
+    return new NextResponse('Authentication failed', { status: 500 });
   }
 }
+

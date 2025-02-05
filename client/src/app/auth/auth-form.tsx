@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { authApi } from '@/app/services/api';
+import { yandexAuth } from '@/app/services/yandex-auth'; // Добавляем импорт
 import { toast } from 'sonner';
-import { useAuth } from '@/app/components/contexts/auth-context'; // Добавляем импорт useAuth
+import { useAuth } from '@/app/components/contexts/auth-context';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -16,7 +17,7 @@ interface AuthFormProps {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
-  const { setUser } = useAuth(); // Получаем setUser из контекста
+  const { setUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -34,8 +35,14 @@ export function AuthForm({ mode }: AuthFormProps) {
     checkAuth();
   }, [router]);
 
+  // Обновленная функция для входа через Яндекс
   const handleYandexLogin = () => {
-    window.location.href = '/api/auth/yandex';
+    try {
+      yandexAuth.initiateAuth();
+    } catch (error) {
+      console.error('Ошибка при инициализации входа через Яндекс:', error);
+      toast.error('Не удалось выполнить вход через Яндекс');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +55,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-
+  
     try {
       let response;
       if (mode === 'register') {
@@ -62,11 +69,14 @@ export function AuthForm({ mode }: AuthFormProps) {
         toast.success('Вход выполнен успешно!');
       }
       
-      // Сохраняем данные пользователя
+      // Сохраняем данные пользователя вместе с URL аватара
       if (response.user) {
-        localStorage.setItem('userData', JSON.stringify(response.user));
-        setUser(response.user); // Обновляем состояние пользователя в контексте
-        window.dispatchEvent(new Event('auth-change')); // Вызываем событие auth-change
+        const userData = {
+          ...response.user,
+          avatarUrl: response.user.avatar_url || null
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
+        setUser(userData);
       }
       
       router.push('/profile');

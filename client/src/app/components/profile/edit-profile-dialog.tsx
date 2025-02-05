@@ -31,38 +31,40 @@ export function EditProfileDialog() {
     }
   }, [isOpen, user]);
 
-  const handleSubmit = async () => {
-    if (!nickname.trim()) {
-      toast.error("Введите никнейм")
-      return
-    }
+  // In EditProfileDialog.tsx:
 
-    setIsSubmitting(true)
-    try {
-      await userApi.updateProfile({ 
-        nickname: nickname.trim(),
-        avatar: avatarFile
-      })
-
-      // Обновляем данные пользователя в контексте и localStorage
-      if (user) {
-        const updatedUserData = {
-          ...user,
-          username: nickname.trim()
-        }
-        localStorage.setItem('userData', JSON.stringify(updatedUserData))
-        setUser(updatedUserData)
-      }
-
-      toast.success("Профиль обновлен")
-      setIsOpen(false)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Не удалось обновить профиль";
-      toast.error(errorMessage)
-    } finally {
-      setIsSubmitting(false)
-    }
+const handleSubmit = async () => {
+  if (!nickname.trim()) {
+    toast.error("Введите никнейм")
+    return
   }
+
+  setIsSubmitting(true)
+  try {
+    const response = await userApi.updateProfile({ 
+      nickname: nickname.trim(),
+      avatar: avatarFile
+    })
+
+    if (user) {
+      const updatedUserData = {
+        ...user,
+        username: nickname.trim(),
+        avatarUrl: response.user.avatar_url // Use the new avatar URL from response
+      }
+      localStorage.setItem('userData', JSON.stringify(updatedUserData))
+      setUser(updatedUserData)
+    }
+
+    toast.success("Профиль обновлен")
+    setIsOpen(false)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Не удалось обновить профиль"
+    toast.error(errorMessage)
+  } finally {
+    setIsSubmitting(false)
+  }
+}
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

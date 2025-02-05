@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { UserButton } from '@/app/components/user-button';
 import { Button } from '@/app/components/ui/button';
 import { useAuth } from '@/app/components/contexts/auth-context';
+import { Avatar, AvatarImage, AvatarFallback } from "@/app/components/ui/avatar";
 
 export function Header() {
   const { user, isLoading } = useAuth();
@@ -37,13 +38,10 @@ export function Header() {
                   className="flex items-center gap-2"
                 >
                   <div className="flex items-center gap-3 text-zinc-400">
-                    <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-zinc-700">
-                      <img
-                        src={user.avatarUrl || "/default-avatar.jpg"}
-                        alt={user.username}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
+                    <Avatar className="h-8 w-8 ring-2 ring-zinc-700">
+                      <AvatarImage src={user.avatarUrl} alt={user.username} />
+                      <AvatarFallback>{user.username[0]}</AvatarFallback>
+                    </Avatar>
                     <span className="text-sm font-medium">
                       {user.username}
                     </span>
