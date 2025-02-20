@@ -44,15 +44,18 @@ class UserLibrary(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.track.title}"
     
+
+
+
 class YandexAccount(models.Model):
-    """
-    Модель для хранения данных аккаунта Яндекс
-    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     yandex_id = models.CharField(max_length=255, unique=True)
-    access_token = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255, null=True, blank=True)
+    access_token = models.TextField()  # Using TextField for potentially long tokens
+    refresh_token = models.TextField(null=True, blank=True)  # Optional field
     expires_at = models.DateTimeField(null=True, blank=True)
+    
+    def is_token_expired(self):
+        return timezone.now() >= self.expires_at
     
     def __str__(self):
         return f"Яндекс аккаунт пользователя {self.user.username}"
@@ -60,19 +63,3 @@ class YandexAccount(models.Model):
     class Meta:
         verbose_name = "Яндекс аккаунт"
         verbose_name_plural = "Яндекс аккаунты"
-
-
-
-class YandexAccount(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    yandex_id = models.CharField(max_length=50, unique=True)
-    access_token = models.TextField()
-    refresh_token = models.TextField(null=True, blank=True)  # Делаем поле опциональным
-    expires_at = models.DateTimeField()
-
-    def is_token_expired(self):
-        return timezone.now() >= self.expires_at
-
-    def refresh_token(self):
-        # Здесь будет логика обновления токена
-        pass
