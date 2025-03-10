@@ -25,7 +25,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('userData');
-      window.location.href = '/login';
+      window.location.href = '/auth/login';
     }
     return Promise.reject(error);
   }
@@ -154,7 +154,7 @@ export const authApi = {
   // Вход в систему
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
-      const response = await api.post<AuthResponse>('/login/', data);
+      const response = await api.post<AuthResponse>('/auth/login/', data);
       if (response.data.token) {
         // Сохраняем токен и данные пользователя в localStorage
         localStorage.setItem('token', response.data.token);

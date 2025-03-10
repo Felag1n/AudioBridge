@@ -30,7 +30,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const checkAuth = async () => {
       if (!isAuthenticated()) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 

@@ -1,6 +1,5 @@
+
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 const REDIRECT_URI = 'http://localhost:3001/auth/yandex/callback';
 const API_BASE_URL = 'http://localhost:8000/api';
@@ -13,6 +12,8 @@ export async function GET(request: Request) {
     if (!code) {
       return new NextResponse('No code provided', { status: 400 });
     }
+
+    console.log('Получен код авторизации, обмениваем на токен...');
 
     const response = await fetch(`${API_BASE_URL}/auth/yandex/`, {
       method: 'POST',
@@ -28,31 +29,41 @@ export async function GET(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Error from backend:', errorText);
-      return new NextResponse(
-        'Authentication failed: ' + (errorText.substring(0, 100) + '...'), 
-        { status: response.status }
+      // Перенаправляем на страницу логина с сообщением об ошибке
+      return NextResponse.redirect(
+        new URL(`/auth/login?error=${encodeURIComponent(errorText)}`, request.url)
       );
     }
 
     const data = await response.json();
+  // Добавьте в начало route.ts
+console.log('Запрос к роуту /auth/yandex/callback с параметрами:', 
+  Object.fromEntries(new URL(request.url).searchParams.entries()));
 
-    if (data.user) {
-      localStorage.setItem('userData', JSON.stringify(data.user));
-    }
-
-    if (data.token) {
-      cookies().set('token', data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30,
-      });
-    }
-
-    return NextResponse.redirect(new URL('/profile', request.url));
+    // Вместо использования cookies, добавляем данные в hash часть URL
+    // Hash часть не передается на сервер, поэтому не будет вызывать повторных запросов
+    const successUrl = new URL('/auth/yandex/success', request.url);
+    
+    // Кодируем данные и добавляем их в hash часть URL
+    const hashData = [
+      `token=${encodeURIComponent(data.token)}`,
+      `userData=${encodeURIComponent(JSON.stringify({
+        id: data.user.id,
+        username: data.user.username, 
+        email: data.user.email,
+        avatarUrl: data.user.avatarUrl || null
+      }))}`
+    ].join('&');
+    
+    successUrl.hash = hashData;
+    
+    console.log('Перенаправление на страницу успеха с данными в URL hash');
+    return NextResponse.redirect(successUrl);
   } catch (error) {
     console.error('Auth error:', error);
-    return new NextResponse('Authentication failed', { status: 500 });
+    // В случае ошибки перенаправляем на страницу логина
+    return NextResponse.redirect(
+      new URL(`/auth/login?error=${encodeURIComponent('Authentication failed')}`, request.url)
+    );
   }
 }
-

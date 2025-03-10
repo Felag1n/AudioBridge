@@ -268,6 +268,7 @@ def search_yandex_tracks(request):
             {'message': 'Ошибка при поиске треков'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -308,10 +309,8 @@ def get_yandex_popular_tracks(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def yandex_auth(request):
-    """Обработчик авторизации через Яндекс"""
     try:
         logger.info('Получен запрос на авторизацию через Яндекс')
-        logger.info(f'Данные запроса: {request.data}')
         
         code = request.data.get('code')
         redirect_uri = request.data.get('redirect_uri')
@@ -323,6 +322,9 @@ def yandex_auth(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Добавьте логирование для отладки
+        logger.info(f'Обмениваем код {code[:5]}... на токен с redirect_uri: {redirect_uri}')
+        
         # Обмениваем код на токен
         token_url = 'https://oauth.yandex.ru/token'
         token_data = {
@@ -333,7 +335,11 @@ def yandex_auth(request):
             'redirect_uri': redirect_uri
         }
 
+        # Отправляем запрос на обмен кода на токен
         token_response = requests.post(token_url, data=token_data)
+        
+        # Логируем ответ для отладки (только статус)
+        logger.info(f'Получен ответ от Яндекс при обмене кода: {token_response.status_code}')
         
         if not token_response.ok:
             logger.error(f'Ошибка получения токена: {token_response.text}')
@@ -342,6 +348,7 @@ def yandex_auth(request):
                 status=token_response.status_code
             )
 
+        # Извлекаем токен из ответа
         token_json = token_response.json()
         access_token = token_json.get('access_token')
 
@@ -421,3 +428,37 @@ def yandex_auth(request):
             {'error': f'Ошибка при авторизации: {str(e)}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_session(request):
+    """Создает временную сессию после авторизации через Яндекс"""
+    token = request.data.get('token')
+    user_data = request.data.get('user_data')
+    
+    if not token or not user_data:
+        return Response({'error': 'Неполные данные'}, status=400)
+    
+    # Генерируем одноразовый код для получения сессии
+    session_code = str(uuid.uuid4())
+    
+    # Сохраняем в кэш Redis или другое хранилище
+    cache.set(f'session_{session_code}', {
+        'token': token,
+        'user_data': user_data
+    }, timeout=300)  # 5 минут
+    
+    return Response({'session_code': session_code})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_session(request, session_code):
+    """Получает данные сессии по коду и удаляет их из кэша"""
+    session_data = cache.get(f'session_{session_code}')
+    
+    if not session_data:
+        return Response({'error': 'Сессия не найдена или истекла'}, status=404)
+    
+    # Удаляем сессию из кэша (одноразовое использование)
+    cache.delete(f'session_{session_code}')
+    
+    return Response(session_data)
