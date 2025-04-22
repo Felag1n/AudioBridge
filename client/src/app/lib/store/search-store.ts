@@ -1,3 +1,5 @@
+//client\src\app\lib\store\search-store.ts
+
 import { create } from 'zustand';
 
 interface SearchStore {

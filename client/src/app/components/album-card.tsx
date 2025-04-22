@@ -1,3 +1,5 @@
+//client\src\app\components\album-card.tsxv
+
 import { AudioLines } from 'lucide-react'
 import { Card, CardContent } from '../components/ui/card'
 

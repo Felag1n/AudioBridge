@@ -1,4 +1,4 @@
-// app/layout.tsx
+//client\src\app\layout.tsx
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Sidebar } from './components/sidebar'

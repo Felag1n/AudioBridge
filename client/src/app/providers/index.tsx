@@ -1,3 +1,5 @@
+//client\src\app\providers\index.tsx
+
 "use client"
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"

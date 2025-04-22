@@ -1,3 +1,5 @@
+//client\src\app\hooks\use-profile.ts
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { userApi } from '../services/api'
 import { useUserStore } from '../lib/store/user-store'

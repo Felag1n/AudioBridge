@@ -1,3 +1,5 @@
+//client\src\app\auth\yandex\callback\page.tsx
+
 'use client';
 
 import { useEffect } from 'react';

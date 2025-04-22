@@ -1,3 +1,5 @@
+//client\src\app\components\chat\chat-header.tsx
+
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 

@@ -1,3 +1,5 @@
+//client\src\app\components\avatar-upload.tsx
+
 "use client"
 
 import { useState, useRef } from "react"

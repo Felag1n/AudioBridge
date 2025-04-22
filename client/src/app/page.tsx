@@ -1,3 +1,5 @@
+//client\src\app\page.tsx
+
 'use client';
 
 import { AudioLines, Shuffle } from 'lucide-react';

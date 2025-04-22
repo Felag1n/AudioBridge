@@ -1,10 +1,12 @@
+//client\src\app\profile\page.tsx
+
 "use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { Card, CardContent } from "@/app/components/ui/card"
-import { EditProfileDialog } from "@/app/components/profile/edit-profile-dialog"
+import { EditProfileDialog } from "@/app/profile/edit-profile-dialog"
 import { AlbumCard } from "@/app/components/album-card"
 import { TrackRow } from "@/app/components/track-row"
 import { isAuthenticated } from "@/app/services/api"

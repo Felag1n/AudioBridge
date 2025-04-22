@@ -1,3 +1,5 @@
+//client\src\app\chat\page.tsx
+
 'use client';
 
 import React from 'react';

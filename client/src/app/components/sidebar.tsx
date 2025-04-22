@@ -1,3 +1,5 @@
+//client\src\app\components\sidebar.tsx
+
 'use client';
 
 import { Search, Home, MessageSquare } from 'lucide-react';

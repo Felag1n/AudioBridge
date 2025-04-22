@@ -1,3 +1,5 @@
+//client\src\app\components\track-row.tsx
+
 import { Play } from 'lucide-react'
 import Link from 'next/link'
 import { Track } from '@/app/components/data/testTracks'

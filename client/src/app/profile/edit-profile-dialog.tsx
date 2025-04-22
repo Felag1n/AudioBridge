@@ -1,17 +1,18 @@
+//client\src\app\profile\edit-profile-dialog.tsx
 "use client"
 
-import { Button } from "../../components/ui/button"
+import { Button } from "../components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
+} from "../components/ui/dialog"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
 import { useEffect, useState } from "react"
-import { AvatarUpload } from "../../components/avatar-upload"
+import { AvatarUpload } from "../components/avatar-upload"
 import { Loader2 } from "lucide-react"
 import { userApi } from "@/app/services/api"
 import { toast } from "sonner"

@@ -1,4 +1,4 @@
-// src/components/audio-waveform.tsx
+//client\src\app\components\audio-waveform.tsx
 import { useRef, useEffect } from 'react'
 import { cn } from '../lib/utils'
 

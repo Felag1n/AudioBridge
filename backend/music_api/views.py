@@ -1,32 +1,39 @@
 # Импорты необходимых модулей
 import os
-from rest_framework.reverse import reverse  
-from rest_framework import status  
-from rest_framework.decorators import api_view, permission_classes  
-from rest_framework.response import Response  
-from rest_framework.permissions import AllowAny, IsAuthenticated  
-from django.contrib.auth import authenticate  
-from rest_framework_simplejwt.tokens import RefreshToken  
-from django.core.files.storage import default_storage  
-from django.contrib.auth.models import User  
-from .models import YandexAccount, UserProfile
-from django.conf import settings 
-from .serializers import (  
-    UserRegistrationSerializer, 
+import logging
+import requests
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
+from django.utils import timezone
+
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from yandex_music import Client
+
+from .models import YandexAccount, UserProfile, Track, UserLibrary
+from .serializers import (
+    UserRegistrationSerializer,
     UserLoginSerializer,
     TrackSerializer,
     UserLibrarySerializer,
     UserUpdateSerializer
 )
-from .models import Track, UserLibrary
-import logging
-import requests
-from yandex_music import Client
-from datetime import datetime, timedelta
-from django.utils import timezone
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
+
+#######################################
+# Вспомогательные функции
+#######################################
 
 def get_yandex_client(user):
     """Получение клиента Яндекс Музыки для пользователя"""
@@ -39,37 +46,24 @@ def get_yandex_client(user):
         logger.error(f"Ошибка при получении клиента Яндекс Музыки: {e}")
         return None
 
-@api_view(['PATCH'])
-@permission_classes([IsAuthenticated])
-def update_profile(request):
-    try:
-        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            user = serializer.save()
-            profile = UserProfile.objects.get(user=user)
-            
-            if 'avatar' in request.FILES:
-                if profile.avatar:
-                    # Delete old avatar file
-                    if os.path.exists(profile.avatar.path):
-                        os.remove(profile.avatar.path)
-                profile.avatar = request.FILES['avatar']
-                profile.save()
-            
-            avatar_url = request.build_absolute_uri(profile.avatar.url) if profile.avatar else None
-            
-            return Response({
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'avatar_url': avatar_url
-                }
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        logger.error(f"Error updating profile: {str(e)}")
-        return Response({'message': 'Ошибка при обновлении профиля'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+def create_auth_response(user):
+    """Создает стандартный ответ при успешной аутентификации"""
+    refresh = RefreshToken.for_user(user)
+    profile = UserProfile.objects.get(user=user)
+    
+    return {
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'avatar_url': profile.avatar.url if profile.avatar else None
+        },
+        'token': str(refresh.access_token),
+    }
+
+#######################################
+# API Endpoints
+#######################################
 
 @api_view(['GET'])
 def api_root(request):
@@ -79,6 +73,10 @@ def api_root(request):
         'login': reverse('music_api:login', request=request),
     })
 
+#######################################
+# Аутентификация и пользователи
+#######################################
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -87,15 +85,8 @@ def register(request):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'username': user.username,
-                },
-                'token': str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
+            return Response(create_auth_response(user), status=status.HTTP_201_CREATED)
+        
         logger.error(f"Validation errors: {serializer.errors}")
         return Response(
             {'message': 'Ошибка валидации', 'errors': serializer.errors}, 
@@ -128,15 +119,8 @@ def login(request):
             
             user = authenticate(username=user.username, password=password)
             if user:
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'user': {
-                        'id': user.id,
-                        'email': user.email,
-                        'username': user.username,
-                    },
-                    'token': str(refresh.access_token),
-                })
+                return Response(create_auth_response(user))
+            
             return Response(
                 {'message': 'Неверный пароль'}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -152,38 +136,145 @@ def login(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@api_view(['GET'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
-def get_user_library(request):
-    """Получение библиотеки пользователя."""
+def update_profile(request):
+    """Обновление профиля пользователя"""
     try:
-        library = UserLibrary.objects.filter(user=request.user)
-        serializer = UserLibrarySerializer(library, many=True)
-        return Response(serializer.data)
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            user = serializer.save()
+            profile = UserProfile.objects.get(user=user)
+            
+            if 'avatar' in request.FILES:
+                if profile.avatar:
+                    # Delete old avatar file
+                    if os.path.exists(profile.avatar.path):
+                        os.remove(profile.avatar.path)
+                profile.avatar = request.FILES['avatar']
+                profile.save()
+            
+            avatar_url = request.build_absolute_uri(profile.avatar.url) if profile.avatar else None
+            
+            return Response({
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'avatar_url': avatar_url
+                }
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        logger.error(f"Error fetching user library: {str(e)}")
-        return Response(
-            {'message': 'Ошибка при получении библиотеки'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        logger.error(f"Error updating profile: {str(e)}")
+        return Response({'message': 'Ошибка при обновлении профиля'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#######################################
+# Яндекс.Музыка API
+#######################################
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def add_to_library(request, track_id):
-    """Добавление трека в библиотеку пользователя."""
+@permission_classes([AllowAny])
+def yandex_auth(request):
+    """Авторизация через Яндекс OAuth"""
     try:
-        track = Track.objects.get(id=track_id)
-        UserLibrary.objects.create(user=request.user, track=track)
-        return Response({'message': 'Трек добавлен в библиотеку'})
-    except Track.DoesNotExist:
-        return Response(
-            {'message': 'Трек не найден'}, 
-            status=status.HTTP_404_NOT_FOUND
+        logger.info('Получен запрос на авторизацию через Яндекс')
+        
+        code = request.data.get('code')
+        redirect_uri = request.data.get('redirect_uri')
+
+        if not code:
+            logger.error('Код авторизации отсутствует')
+            return Response(
+                {'error': 'Не предоставлен код авторизации'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        logger.info(f'Обмениваем код {code[:5]}... на токен с redirect_uri: {redirect_uri}')
+        
+        # Обмениваем код на токен
+        token_url = 'https://oauth.yandex.ru/token'
+        token_data = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'client_id': settings.YANDEX_CLIENT_ID,
+            'client_secret': settings.YANDEX_CLIENT_SECRET,
+            'redirect_uri': redirect_uri
+        }
+
+        token_response = requests.post(token_url, data=token_data)
+        logger.info(f'Получен ответ от Яндекс при обмене кода: {token_response.status_code}')
+        
+        if not token_response.ok:
+            logger.error(f'Ошибка получения токена: {token_response.text}')
+            return Response(
+                {'error': f'Ошибка получения токена: {token_response.text}'}, 
+                status=token_response.status_code
+            )
+
+        token_json = token_response.json()
+        access_token = token_json.get('access_token')
+
+        if not access_token:
+            logger.error('Access token отсутствует в ответе')
+            return Response(
+                {'error': 'Не получен токен доступа'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Получаем информацию о пользователе
+        user_info_url = 'https://login.yandex.ru/info'
+        headers = {'Authorization': f'OAuth {access_token}'}
+        
+        logger.info('Запрос информации о пользователе')
+        user_info_response = requests.get(user_info_url, headers=headers)
+        logger.info(f'Получен ответ с информацией о пользователе: {user_info_response.status_code}')
+        
+        if not user_info_response.ok:
+            logger.error(f'Ошибка получения информации о пользователе: {user_info_response.text}')
+            return Response(
+                {'error': 'Ошибка получения информации о пользователе'}, 
+                status=user_info_response.status_code
+            )
+
+        user_info = user_info_response.json()
+
+        # Создаем или получаем существующего пользователя
+        logger.info('Создание/обновление пользователя')
+        user, created = User.objects.get_or_create(
+            username=f"yandex_{user_info['id']}", 
+            defaults={
+                'email': user_info.get('default_email', ''),
+                'first_name': user_info.get('first_name', ''),
+                'last_name': user_info.get('last_name', '')
+            }
         )
+        logger.info(f'Пользователь {"создан" if created else "получен"}')
+
+        # Создаем или обновляем профиль пользователя
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+
+        # Обновляем данные Яндекс аккаунта
+        yandex_account, _ = YandexAccount.objects.update_or_create(
+            yandex_id=user_info['id'],
+            defaults={
+                'user': user,
+                'access_token': access_token,
+                'refresh_token': token_json.get('refresh_token'),
+                'expires_at': timezone.now() + timedelta(seconds=token_json.get('expires_in', 0))
+            }
+        )
+
+        # Формируем ответ с токеном
+        response_data = create_auth_response(user)
+        
+        logger.info('Авторизация успешно завершена')
+        return Response(response_data)
+
     except Exception as e:
-        logger.error(f"Error adding track to library: {str(e)}")
+        logger.exception('Необработанная ошибка при авторизации через Яндекс')
         return Response(
-            {'message': 'Ошибка при добавлении трека'}, 
+            {'error': f'Ошибка при авторизации: {str(e)}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -268,7 +359,6 @@ def search_yandex_tracks(request):
             {'message': 'Ошибка при поиске треков'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -462,3 +552,45 @@ def get_session(request, session_code):
     cache.delete(f'session_{session_code}')
     
     return Response(session_data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_library(request):
+    """Получение библиотеки пользователя."""
+    try:
+        library = UserLibrary.objects.filter(user=request.user)
+        serializer = UserLibrarySerializer(library, many=True, context={'request': request})
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error fetching user library: {str(e)}")
+        return Response(
+            {'message': 'Ошибка при получении библиотеки'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_to_library(request, track_id):
+    """Добавление трека в библиотеку пользователя."""
+    try:
+        track = Track.objects.get(id=track_id)
+        # Проверяем, не добавлен ли трек уже
+        library_item, created = UserLibrary.objects.get_or_create(user=request.user, track=track)
+        
+        if created:
+            message = 'Трек добавлен в библиотеку'
+        else:
+            message = 'Трек уже был в библиотеке'
+            
+        return Response({'message': message})
+    except Track.DoesNotExist:
+        return Response(
+            {'message': 'Трек не найден'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        logger.error(f"Error adding track to library: {str(e)}")
+        return Response(
+            {'message': 'Ошибка при добавлении трека'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

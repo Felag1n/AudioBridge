@@ -1,3 +1,5 @@
+//client\src\app\auth\yandex\route.ts
+
 import { redirect } from 'next/navigation';
 
 export async function GET(request: Request) {

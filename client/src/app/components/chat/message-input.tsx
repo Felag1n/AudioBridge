@@ -1,3 +1,5 @@
+//client\src\app\components\chat\message-input.tsx
+
 import React, { useState } from 'react';
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";

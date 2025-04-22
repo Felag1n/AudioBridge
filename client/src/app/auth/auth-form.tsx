@@ -1,3 +1,4 @@
+//client\src\app\auth\auth-form.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -154,7 +155,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
           </Button>
         </form>
-
+        
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-zinc-700" />

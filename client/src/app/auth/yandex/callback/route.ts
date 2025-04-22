@@ -1,4 +1,4 @@
-
+//client\src\app\auth\yandex\callback\route.ts
 import { NextResponse } from 'next/server';
 
 const REDIRECT_URI = 'http://localhost:3001/auth/yandex/callback';

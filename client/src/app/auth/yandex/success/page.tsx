@@ -1,4 +1,4 @@
-// src/app/auth/yandex/success/page.tsx
+//client\src\app\auth\yandex\success\page.tsx
 'use client'
 
 import { useEffect, useState } from 'react';

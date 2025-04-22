@@ -1,4 +1,4 @@
-// src/app/services/yandex-auth.ts
+//client\src\app\services\yandex-auth.ts
 
 import api from './api';
 

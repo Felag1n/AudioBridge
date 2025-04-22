@@ -1,4 +1,4 @@
-// src/app/services/yandex-api.ts
+//client\src\app\services\yandex-api.ts
 
 import api from './api';
 

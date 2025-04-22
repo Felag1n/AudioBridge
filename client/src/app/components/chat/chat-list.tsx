@@ -1,3 +1,5 @@
+//client\src\app\components\chat\chat-list.tsx
+
 import React from 'react';
 import { ScrollArea } from "../ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";

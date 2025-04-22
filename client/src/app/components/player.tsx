@@ -1,3 +1,4 @@
+//client\src\app\components\player.tsx
 'use client'
 
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'

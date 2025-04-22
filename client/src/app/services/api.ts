@@ -1,3 +1,4 @@
+//client\src\app\services\api.ts
 import axios, { AxiosError } from 'axios';
 
 // Создание экземпляра axios с базовой конфигурацией

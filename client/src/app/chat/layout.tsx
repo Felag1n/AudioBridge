@@ -1,3 +1,5 @@
+//client\src\app\chat\layout.tsx
+
 export const metadata = {
     title: 'Chat | AudioBridge',
     description: 'Chat with other music lovers',

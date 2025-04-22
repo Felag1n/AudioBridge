@@ -1,3 +1,4 @@
+//client\src\app\auth\register\page.tsx
 'use client'
 
 import { AuthForm } from '@/app/auth/auth-form'

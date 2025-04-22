@@ -1,3 +1,5 @@
+//client\src\app\components\contexts\auth-context.tsx
+
 "use client"
 
 import { createContext, useContext, useState, useEffect } from 'react';

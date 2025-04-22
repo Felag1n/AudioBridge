@@ -1,4 +1,4 @@
-
+//client\src\app\components\modals\SearchModal.tsx
 'use client';
 
 import React, { useState } from 'react';

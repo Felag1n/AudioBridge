@@ -1,3 +1,5 @@
+//client\src\app\components\header.tsx
+
 "use client"
 
 import { motion, AnimatePresence } from 'framer-motion';

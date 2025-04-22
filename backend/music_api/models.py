@@ -18,17 +18,16 @@ class Track(models.Model):
     artist = models.CharField(max_length=200, verbose_name="Исполнитель")
     album = models.CharField(max_length=200, verbose_name="Альбом", blank=True, null=True)
     duration = models.IntegerField(verbose_name="Длительность (сек)", default=0)
-    file_path = models.CharField(max_length=500, verbose_name="Путь к файлу", default='', blank=True)
+    file_path = models.URLField(max_length=500, verbose_name="URL аудио файла", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
+    def __str__(self):
+        return f"{self.artist} - {self.title}"
+    
     class Meta:
         verbose_name = "Трек"
         verbose_name_plural = "Треки"
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.artist} - {self.title}"
 
 class UserLibrary(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='library')

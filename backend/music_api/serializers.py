@@ -3,14 +3,13 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Track, UserLibrary, UserProfile
 
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Сериализатор для регистрации новых пользователей.
     Обрабатывает создание пользователя и его профиля.
     """
-    # Пароль только для записи (не будет включен в ответ API)
     password = serializers.CharField(write_only=True)
-    # Email обязателен при регистрации
     email = serializers.EmailField(required=True)
 
     class Meta:
@@ -20,8 +19,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         """
         Проверяет уникальность email перед регистрацией.
-        Raises:
-            ValidationError: если email уже используется
         """
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Пользователь с таким email уже существует")
@@ -30,10 +27,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Создает нового пользователя и его профиль.
-        Args:
-            validated_data: Проверенные данные пользователя
-        Returns:
-            User: Созданный объект пользователя
         """
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -44,20 +37,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         UserProfile.objects.create(user=user)
         return user
 
+
 class UserLoginSerializer(serializers.Serializer):
     """
     Сериализатор для аутентификации пользователя.
-    Проверяет email и пароль при входе.
     """
     email = serializers.EmailField()
     password = serializers.CharField()
 
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Сериализатор для профиля пользователя.
-    Обрабатывает данные профиля, включая аватар.
     """
-    # Добавляем URL аватара как вычисляемое поле
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -67,66 +59,86 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj):
         """
         Формирует полный URL для аватара пользователя.
-        Returns:
-            str: Полный URL аватара или None, если аватар не установлен
         """
         if obj.avatar:
-            return self.context['request'].build_absolute_uri(obj.avatar.url)
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
         return None
+
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
     Сериализатор для обновления данных пользователя.
-    Позволяет обновлять основную информацию и аватар.
     """
-    # Поле для загрузки аватара (необязательное)
-    avatar = serializers.ImageField(required=False)
-    # Вложенный сериализатор профиля (только для чтения)
-    profile = UserProfileSerializer(read_only=True)
+    avatar = serializers.ImageField(required=False, write_only=True)
+    profile = UserProfileSerializer(read_only=True, source='userprofile')
 
     class Meta:
         model = User
-        fields = ('username', 'avatar', 'profile')
+        fields = ('username', 'email', 'avatar', 'profile')
+        extra_kwargs = {
+            'email': {'required': False},
+        }
         
     def update(self, instance, validated_data):
         """
         Обновляет данные пользователя и его профиль.
-        Обрабатывает загрузку нового аватара.
         """
-        # Извлекаем и обрабатываем аватар отдельно
+        # Извлекаем аватар из данных
         avatar = validated_data.pop('avatar', None)
+        
+        # Обновляем основные поля пользователя
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Если предоставлен новый аватар, обновляем его
         if avatar:
-            # Получаем или создаем профиль пользователя
             profile, created = UserProfile.objects.get_or_create(user=instance)
             profile.avatar = avatar
             profile.save()
         
-        # Обновляем остальные поля пользователя
-        return super().update(instance, validated_data)
+        return instance
+
 
 class TrackSerializer(serializers.ModelSerializer):
     """
     Сериализатор для музыкальных треков.
-    Обрабатывает все поля модели Track.
     """
+    file_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = Track
-        fields = '__all__'  # Включаем все поля модели
+        fields = ('id', 'title', 'artist', 'album', 'duration', 'file_path', 'file_url', 'created_at')
+    
+    def get_file_url(self, obj):
+        """
+        Формирует полный URL для аудио файла, если он доступен.
+        """
+        if obj.file_path:
+            request = self.context.get('request')
+            if request and not obj.file_path.startswith(('http://', 'https://')):
+                return request.build_absolute_uri(obj.file_path)
+            return obj.file_path
+        return None
+
 
 class UserLibrarySerializer(serializers.ModelSerializer):
     """
     Сериализатор для библиотеки пользователя.
-    Включает полную информацию о треках в библиотеке.
     """
-    # Вложенный сериализатор для получения полной информации о треке
     track = TrackSerializer()
 
     class Meta:
         model = UserLibrary
         fields = ('id', 'user', 'track', 'added_at')
-
-def get_avatar_url(self, obj):
-    if obj.avatar:
-        request = self.context.get('request')
-        return request.build_absolute_uri(obj.avatar.url)
-    return None
+        
+    def to_representation(self, instance):
+        """
+        Дополнительно обрабатывает представление объекта библиотеки.
+        """
+        representation = super().to_representation(instance)
+        # Можно добавить дополнительную логику обработки
+        return representation
