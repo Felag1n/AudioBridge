@@ -2,16 +2,18 @@
 
 'use client';
 
-import { Search, Home, MessageSquare } from 'lucide-react';
+import { Search, Home, MessageSquare, Upload, User, Music, Disc } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSearchStore } from '../lib/store/search-store';
 import { cn } from '../lib/utils';
 import { SearchModal } from './modals/SearchModal';
+import { useAuth } from '../components/contexts/auth-context';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { openSearch } = useSearchStore();
+  const { user } = useAuth();
 
   const isActive = (path: string) => pathname === path;
 
@@ -23,7 +25,7 @@ export function Sidebar() {
           AudioBridge
         </Link>
 
-        <nav className="flex flex-col gap-4">
+        <nav className="flex flex-col gap-1">
           <Link
             href="/"
             className={cn(
@@ -39,7 +41,7 @@ export function Sidebar() {
 
           <button
             onClick={openSearch}
-            className="flex items-center gap-2 rounded-md p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100"
+            className="flex items-center gap-2 rounded-md p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100 text-left"
           >
             <Search size={20} />
             Поиск
@@ -57,6 +59,66 @@ export function Sidebar() {
             <MessageSquare size={20} />
             Чат
           </Link>
+          
+          {user && (
+            <>
+              <div className="mt-4 mb-2 px-2 text-xs font-semibold text-zinc-500 uppercase">
+                Библиотека
+              </div>
+              
+              <Link
+                href="/upload"
+                className={cn(
+                  "flex items-center gap-2 rounded-md p-2 transition-colors",
+                  isActive('/upload')
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                )}
+              >
+                <Upload size={20} />
+                Загрузить
+              </Link>
+              
+              <Link
+                href="/profile"
+                className={cn(
+                  "flex items-center gap-2 rounded-md p-2 transition-colors",
+                  pathname.startsWith('/profile')
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                )}
+              >
+                <User size={20} />
+                Мой профиль
+              </Link>
+              
+              <Link
+                href="/profile/tracks"
+                className={cn(
+                  "flex items-center gap-2 rounded-md p-2 transition-colors",
+                  pathname.startsWith('/profile/tracks')
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                )}
+              >
+                <Music size={20} />
+                Мои треки
+              </Link>
+              
+              <Link
+                href="/profile/albums"
+                className={cn(
+                  "flex items-center gap-2 rounded-md p-2 transition-colors",
+                  pathname.startsWith('/profile/albums')
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                )}
+              >
+                <Disc size={20} />
+                Мои альбомы
+              </Link>
+            </>
+          )}
         </nav>
       </div>
       <SearchModal />

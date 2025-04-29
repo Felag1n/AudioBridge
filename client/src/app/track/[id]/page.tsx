@@ -2,9 +2,9 @@
 
 'use client';
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { yandexMusicApi } from "@/app/services/yandex-api";
+import { trackApi } from "@/app/services/track-api";
 import { useAudioPlayer } from '@/app/hooks/use-audio-player';
 import { 
   Heart, 
@@ -15,38 +15,57 @@ import {
   Clock,
   Music,
   User,
-  Album 
+  Album,
+  Edit,
+  Trash
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { toast } from "sonner";
+import { formatTime } from "@/app/lib/utils";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { useState } from "react";
+import { useAuth } from '@/app/components/contexts/auth-context';
+import Link from "next/link";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/app/components/ui/dropdown-menu";
 
 export default function TrackPage() {
   const params = useParams();
+  const router = useRouter();
   const trackId = params.id as string;
+  const { user } = useAuth();
   const { playTrack, currentTrack, isPlaying, togglePlay } = useAudioPlayer();
   const [isFavorite, setIsFavorite] = useState(false);
 
   const { data: track, isLoading, error } = useQuery({
     queryKey: ['track', trackId],
-    queryFn: () => yandexMusicApi.getTrack(trackId),
+    queryFn: () => trackApi.getTrack(trackId),
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 минут кэш
   });
 
+  useEffect(() => {
+    if (track) {
+      setIsFavorite(track.isLiked || false);
+    }
+  }, [track]);
+
   const handlePlay = () => {
-    if (track?.downloadUrl) {
+    if (track?.audioUrl) {
       if (currentTrack?.id === track.id) {
         togglePlay();
       } else {
         playTrack({
           id: track.id,
           title: track.title,
-          artist: track.artists.map(a => a.name).join(', '),
-          coverUrl: track.album?.coverUrl || null,
-          url: track.downloadUrl,
-          duration: track.duration || 0
+          artist: track.artist,
+          coverUrl: track.coverUrl,
+          url: track.audioUrl,
+          duration: track.duration
         });
       }
     } else {
@@ -56,8 +75,11 @@ export default function TrackPage() {
 
   const handleAddToFavorites = async () => {
     try {
-      // Здесь должен быть API-запрос к вашему бэкенду для добавления в избранное
-      // await api.post(`/library/add/${trackId}/`);
+      if (isFavorite) {
+        await trackApi.unlikeTrack(trackId);
+      } else {
+        await trackApi.likeTrack(trackId);
+      }
       setIsFavorite(!isFavorite);
       toast.success(isFavorite ? "Удалено из избранного" : "Добавлено в избранное");
     } catch (err) {
@@ -71,6 +93,18 @@ export default function TrackPage() {
       toast.success("Ссылка скопирована в буфер обмена");
     } catch (err) {
       toast.error("Не удалось скопировать ссылку");
+    }
+  };
+  
+  const handleDeleteTrack = async () => {
+    if (confirm('Вы уверены, что хотите удалить этот трек?')) {
+      try {
+        await trackApi.deleteTrack(trackId);
+        toast.success('Трек успешно удален');
+        router.push('/profile');
+      } catch (error) {
+        toast.error('Не удалось удалить трек');
+      }
     }
   };
 
@@ -90,21 +124,14 @@ export default function TrackPage() {
       <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
         <Music className="h-16 w-16 text-zinc-500" />
         <h2 className="text-2xl font-semibold text-zinc-300">Трек не найден</h2>
-        <p className="text-zinc-400">Возможно, трек больше не доступен или вы не авторизованы в Яндекс Музыке</p>
+        <p className="text-zinc-400">Возможно, трек больше не доступен или был удален</p>
         <Button onClick={() => window.history.back()}>Вернуться назад</Button>
       </div>
     );
   }
 
   const isCurrentTrack = currentTrack?.id === track.id;
-  const artistNames = track.artists.map(artist => artist.name).join(', ');
-  
-  // Форматирование длительности трека
-  const formatDuration = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  const isOwnTrack = user && user.id === track.userId;
 
   return (
     <div className="space-y-8">
@@ -112,7 +139,7 @@ export default function TrackPage() {
       <div className="flex flex-col md:flex-row md:items-end gap-6">
         <div className="relative aspect-square w-full md:w-48 overflow-hidden rounded-lg">
           <img 
-            src={track.album?.coverUrl || '/api/placeholder/200/200'}
+            src={track.coverUrl || '/api/placeholder/200/200'}
             alt={track.title}
             className="h-full w-full object-cover"
           />
@@ -129,16 +156,42 @@ export default function TrackPage() {
         </div>
         
         <div className="flex-1">
+          <div className="flex items-center gap-2 text-sm text-zinc-400 mb-2">
+            <Music className="h-4 w-4" />
+            <span>Трек</span>
+            {track.album && (
+              <>
+                <span>•</span>
+                <Link href={`/album/${track.album.id}`} className="hover:underline">
+                  {track.album.title}
+                </Link>
+              </>
+            )}
+          </div>
+          
           <h1 className="text-2xl md:text-4xl font-bold">{track.title}</h1>
           <div className="mt-2 text-lg text-zinc-400">
-            {artistNames}
+            {track.artist}
           </div>
-          {track.album?.title && (
-            <div className="mt-1 text-sm text-zinc-500">
-              Альбом: {track.album.title}
-            </div>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
+          
+          <div className="mt-2 flex items-center gap-2 text-sm text-zinc-500">
+            {track.duration && (
+              <>
+                <Clock className="h-4 w-4" />
+                <span>{formatTime(track.duration)}</span>
+              </>
+            )}
+            {track.genre && (
+              <>
+                <span>•</span>
+                <span>{track.genre}</span>
+              </>
+            )}
+            <span>•</span>
+            <span>{track.likesCount} лайков</span>
+          </div>
+          
+          <div className="mt-5 flex flex-wrap gap-3">
             <Button 
               className="gap-2 bg-purple-600 hover:bg-purple-700"
               onClick={handlePlay}
@@ -171,13 +224,35 @@ export default function TrackPage() {
               <Share2 className="h-4 w-4" />
               Поделиться
             </Button>
+            
+            {isOwnTrack && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                  <Link href={`/track/${trackId}/edit`}>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Редактировать
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem onClick={handleDeleteTrack} className="text-red-500 cursor-pointer">
+                    <Trash className="mr-2 h-4 w-4" />
+                    Удалить
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
 
       {/* Дополнительная информация */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Music className="h-5 w-5" />
@@ -185,55 +260,67 @@ export default function TrackPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-zinc-400">Длительность:</div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4 text-zinc-500" />
-                {formatDuration(track.duration)}
-              </div>
-              
-              <div className="text-zinc-400">Исполнитель:</div>
-              <div className="flex items-center gap-1">
-                <User className="h-4 w-4 text-zinc-500" />
-                {artistNames}
-              </div>
-              
-              {track.album?.title && (
-                <>
-                  <div className="text-zinc-400">Альбом:</div>
-                  <div className="flex items-center gap-1">
-                    <Album className="h-4 w-4 text-zinc-500" />
-                    {track.album.title}
-                  </div>
-                </>
+            <div className="grid grid-cols-2 gap-4">
+              {track.duration && (
+                <div>
+                  <h3 className="text-sm text-zinc-400">Длительность</h3>
+                  <p className="font-medium">{formatTime(track.duration)}</p>
+                </div>
               )}
+              
+              <div>
+                <h3 className="text-sm text-zinc-400">Исполнитель</h3>
+                <p className="font-medium">{track.artist}</p>
+              </div>
+              
+              {track.genre && (
+                <div>
+                  <h3 className="text-sm text-zinc-400">Жанр</h3>
+                  <p className="font-medium">{track.genre}</p>
+                </div>
+              )}
+              
+              <div>
+                <h3 className="text-sm text-zinc-400">Добавлен</h3>
+                <p className="font-medium">{new Date(track.createdAt).toLocaleDateString()}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm text-zinc-400">Количество лайков</h3>
+                <p className="font-medium">{track.likesCount}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Исполнители
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {track.artists.map(artist => (
-                <div key={artist.id} className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center">
-                    <User className="h-5 w-5 text-zinc-400" />
+        {track.album && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Album className="h-5 w-5" />
+                Альбом
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Link href={`/album/${track.album.id}`}>
+                <div className="flex items-center gap-4 p-2 rounded-md hover:bg-zinc-800/50 transition-colors">
+                  <div className="h-16 w-16 overflow-hidden rounded-md flex-shrink-0">
+                    <img 
+                      src={track.album.coverUrl || '/api/placeholder/64/64'} 
+                      alt={track.album.title}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div>
-                    <div className="font-medium">{artist.name}</div>
+                    <h3 className="font-medium">{track.album.title}</h3>
+                    <p className="text-sm text-zinc-400">{track.album.artist}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
-  );
-}
+    );
+  }
