@@ -14,9 +14,10 @@ SECRET_KEY = 'django-insecure-t%-+!s98%+=qz8e9w4_+!7k-wor8hs6$mzsbve35oaouke_4$^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,10 +26,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     # Сторонние приложения
     'rest_framework',
     'rest_framework_simplejwt',  # Добавлено
-    'corsheaders',
     # Наши приложения
     'music_api',
 ]
@@ -45,11 +46,13 @@ MIDDLEWARE = [
 ]
 
 # CORS настройки
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-     "http://localhost:3001",
+    "http://localhost:3001",
+    "http://localhost:8000",  # Добавляем Django сервер
 ]
 
-CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',

@@ -10,17 +10,11 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
 import { Button } from "@/app/components/ui/button"
-import { authApi } from "@/app/services/api"
-import { useAuth } from '@/app/components/contexts/auth-context'
+import { useAuth } from '@/app/contexts/auth-context'
 import Link from "next/link"
 
 export function UserButton() {
-  const { setUser } = useAuth();
-
-  const handleLogout = () => {
-    authApi.logout();
-    setUser(null); // Update the auth context when logging out
-  }
+  const { logout } = useAuth();
 
   return (
     <DropdownMenu>
@@ -37,7 +31,7 @@ export function UserButton() {
           </DropdownMenuItem>
         </Link>
         <DropdownMenuItem 
-          onClick={handleLogout}
+          onClick={logout}
           className="text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 cursor-pointer"
         >
           <LogOut className="mr-2 h-4 w-4" />

@@ -74,14 +74,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       if (response.user) {
         const userData = {
           ...response.user,
-          avatarUrl: response.user.avatar_url || null
+          avatarUrl: (response.user as any).avatar_url || null
         };
         localStorage.setItem('userData', JSON.stringify(userData));
         setUser(userData);
       }
       
       router.push('/profile');
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.response?.data?.message || 'Произошла ошибка');
     } finally {
       setIsLoading(false);
@@ -89,21 +89,24 @@ export function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <Card className="w-full bg-zinc-900 text-zinc-50">
+    <Card className="w-full max-w-md bg-zinc-900/50 backdrop-blur-sm text-zinc-50 border-zinc-800 shadow-xl">
       <CardHeader>
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1">
+          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1 animate-pulse">
             <div className="flex h-full w-full items-center justify-center rounded-full bg-zinc-900">
-              <svg className="h-6 w-6 text-zinc-50" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M12 3v7.26L6.37 15.1a1 1 0 0 1-1.64-.77V5.27A2.27 2.27 0 0 1 7 3h5zm1 0h5a2.27 2.27 0 0 1 2.27 2.27v9.06a1 1 0 0 1-1.64.77L13 10.26V3z"
-                />
+              <svg className="h-10 w-10 text-zinc-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3L12 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M8 7L8 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M16 7L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M4 11L4 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M20 11L20 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M6 9L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M18 9L18 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
           </div>
           <div className="space-y-1 text-center">
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
               {mode === 'login' ? 'Вход' : 'Регистрация'}
             </CardTitle>
             <p className="text-sm text-zinc-400">
@@ -123,7 +126,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               value={formData.username}
               onChange={handleChange}
               disabled={isLoading}
-              className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-400"
+              className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500"
               required
             />
           )}
@@ -134,7 +137,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={formData.email}
             onChange={handleChange}
             disabled={isLoading}
-            className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-400"
+            className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500"
             required
           />
           <Input
@@ -144,15 +147,21 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={formData.password}
             onChange={handleChange}
             disabled={isLoading}
-            className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-400"
+            className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500"
             required
           />
           <Button 
             type="submit" 
-            className="w-full" 
+            className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-medium" 
             disabled={isLoading}
           >
-            {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              </div>
+            ) : (
+              mode === 'login' ? 'Войти' : 'Зарегистрироваться'
+            )}
           </Button>
         </form>
         
@@ -161,7 +170,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             <div className="w-full border-t border-zinc-700" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-zinc-900 px-2 text-zinc-400">
+            <span className="bg-zinc-900/50 px-2 text-zinc-400">
               или
             </span>
           </div>
@@ -169,7 +178,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         <Button 
           onClick={handleYandexLogin}
-          className="w-full bg-[#FC3F1D] text-white hover:bg-[#FC3F1D]/90"
+          className="w-full bg-[#FC3F1D] text-white hover:bg-[#FC3F1D]/90 transition-colors duration-200"
           disabled={isLoading}
         >
           <YandexIcon className="mr-2 h-5 w-5" />
@@ -180,14 +189,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           {mode === 'login' ? (
             <>
               Нет аккаунта?{' '}
-              <Link href="/auth/register" className="text-purple-400 hover:underline">
+              <Link href="/auth/register" className="text-purple-400 hover:text-purple-300 transition-colors duration-200">
                 Зарегистрироваться
               </Link>
             </>
           ) : (
             <>
               Уже есть аккаунт?{' '}
-              <Link href="/auth/login" className="text-purple-400 hover:underline">
+              <Link href="/auth/login" className="text-purple-400 hover:text-purple-300 transition-colors duration-200">
                 Войти
               </Link>
             </>

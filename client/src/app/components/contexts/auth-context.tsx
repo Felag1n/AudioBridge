@@ -40,15 +40,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           setUser(null);
+          localStorage.removeItem('userData');
         }
       } catch (error) {
         setUser(null);
+        localStorage.removeItem('userData');
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    // Only check auth if there's user data in localStorage
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      checkAuth();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   return (

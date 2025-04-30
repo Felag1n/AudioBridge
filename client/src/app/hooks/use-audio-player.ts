@@ -108,7 +108,7 @@ export function useAudioPlayer() {
     const wasPlaying = !audio.paused
 
     // Загружаем новый трек
-    audio.src = currentTrack.url
+    audio.src = currentTrack.file_url
     audio.load()
 
     // Если трек играл до смены, продолжаем воспроизведение

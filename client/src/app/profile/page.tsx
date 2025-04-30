@@ -17,8 +17,9 @@ import { useQuery } from "@tanstack/react-query"
 import { trackApi } from "@/app/services/track-api"
 import { albumApi } from "@/app/services/album-api"
 import { motion } from "framer-motion"
+import { Track, Album } from '@/app/types/track'
 
-function AlbumCard({ album }) {
+function AlbumCard({ album }: { album: Album }) {
   return (
     <Link href={`/album/${album.id}`}>
       <Card className="group relative overflow-hidden transition-colors hover:bg-zinc-800/50 bg-zinc-900 border-zinc-800">
@@ -120,7 +121,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Статистика */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="flex flex-col items-center justify-center p-6">
             <div className="text-3xl font-bold">{userTracks?.length || 0}</div>
@@ -193,7 +194,7 @@ export default function ProfilePage() {
               {isTracksLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, index) => (
-                    <div key={index} className="flex items-center gap-4">
+                    <div key={`track-skeleton-${index}`} className="flex items-center gap-4">
                       <div className="h-12 w-12 bg-zinc-800 rounded-md animate-pulse"></div>
                       <div className="flex-1 space-y-2">
                         <div className="h-5 bg-zinc-800 rounded animate-pulse w-1/3"></div>
@@ -204,17 +205,17 @@ export default function ProfilePage() {
                 </div>
               ) : userTracks && userTracks.length > 0 ? (
                 <div className="space-y-2">
-                  {userTracks.map((track) => (
+                  {userTracks.map((track: Track) => (
                     <TrackRow 
-                      key={track.id} 
+                      key={`track-${track.id}`} 
                       track={{
-                        id: track.id,
+                        id: track.id.toString(),
                         title: track.title,
                         artist: track.artist,
-                        coverUrl: track.coverUrl,
-                        url: track.audioUrl,
+                        coverUrl: track.cover_url,
+                        url: track.file_url,
                         duration: track.duration,
-                        isLiked: track.isLiked
+                        isLiked: track.is_liked || false
                       }}
                       showLike
                     />
@@ -252,7 +253,7 @@ export default function ProfilePage() {
           {isAlbumsLoading ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {[...Array(4)].map((_, index) => (
-                <Card key={index} className="bg-zinc-900 border-zinc-800">
+                <Card key={`album-skeleton-${index}`} className="bg-zinc-900 border-zinc-800">
                   <CardContent className="p-4">
                     <div className="aspect-square bg-zinc-800 rounded-md animate-pulse mb-2"></div>
                     <div className="h-5 bg-zinc-800 rounded animate-pulse mb-2"></div>
@@ -264,7 +265,7 @@ export default function ProfilePage() {
           ) : userAlbums && userAlbums.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {userAlbums.map((album) => (
-                <AlbumCard key={album.id} album={album} />
+                <AlbumCard key={`album-${album.id}`} album={album} />
               ))}
             </div>
           ) : (

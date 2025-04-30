@@ -108,11 +108,11 @@ export function TrackUploadForm() {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('artist', artist);
-      formData.append('audio_file', audioFile);
+      formData.append('file', audioFile);
       
       if (album) formData.append('album', album);
       if (genre) formData.append('genre', genre);
-      if (coverFile) formData.append('cover_image', coverFile);
+      if (coverFile) formData.append('cover', coverFile);
       
       const response = await trackApi.uploadTrack(formData);
       

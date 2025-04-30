@@ -3,7 +3,7 @@
 
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'
 import React, { useEffect } from 'react'
-import { useAudioPlayer } from '../hooks/use-audio-player'
+import { useAudioPlayer } from '../components/contexts/audio-player-context'
 
 export function Player() {
   const {
@@ -33,9 +33,14 @@ export function Player() {
   }
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!duration) return
+    
     const rect = e.currentTarget.getBoundingClientRect()
     const percent = (e.clientX - rect.left) / rect.width
-    seekTo(percent * duration)
+    const newTime = Math.max(0, Math.min(duration, percent * duration))
+    
+    // Устанавливаем новое время воспроизведения
+    seekTo(newTime)
   }
 
   const handleVolumeClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -61,7 +66,10 @@ export function Player() {
               className="absolute left-0 top-0 h-full rounded-full bg-white"
               style={{ width: `${(progress / duration) * 100}%` }}
             />
-            <div className="absolute -top-2 h-5 w-full" />
+            <div 
+              className="absolute -top-2 h-5 w-full"
+              onClick={handleProgressClick}
+            />
           </div>
           <span className="w-12 text-sm text-zinc-400">{formatTime(duration)}</span>
         </div>
@@ -70,9 +78,9 @@ export function Player() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-md bg-zinc-800">
-              {currentTrack?.coverUrl && (
+              {currentTrack?.cover_url && (
                 <img 
-                  src={currentTrack.coverUrl} 
+                  src={currentTrack.cover_url} 
                   alt={currentTrack.title}
                   className="h-full w-full rounded-md object-cover"
                 />

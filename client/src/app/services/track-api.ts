@@ -1,18 +1,19 @@
 import api from './api';
+import { useAuth } from '@/app/contexts/auth-context';
+import { AxiosError } from 'axios';
 
 export interface Track {
-  id: string;
+  id: number;
   title: string;
   artist: string;
-  album?: string;
-  coverUrl?: string;
-  audioUrl: string;
+  album: string;
   duration: number;
-  genre?: string;
-  createdAt: string;
-  likesCount: number;
-  isLiked?: boolean;
-  userId: string;
+  file_path: string;
+  file_url: string;
+  cover_url: string;
+  created_at: string;
+  user: number;
+  is_liked?: boolean;
 }
 
 export interface PopularTrack extends Track {
@@ -20,68 +21,116 @@ export interface PopularTrack extends Track {
 }
 
 export const trackApi = {
-  // Загрузка трека
-  uploadTrack: async (formData: FormData): Promise<Track> => {
-    const { data } = await api.post('/tracks/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return data;
-  },
-
   // Получение трека по ID
   getTrack: async (trackId: string): Promise<Track> => {
-    const { data } = await api.get(`/tracks/${trackId}/`);
-    return data;
+    try {
+      const { data } = await api.get(`/tracks/${trackId}/`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching track:', error);
+      throw error;
+    }
   },
 
   // Получение всех треков пользователя
   getUserTracks: async (): Promise<Track[]> => {
-    const { data } = await api.get('/tracks/user/');
-    return data;
+    // Check if we're in the browser environment
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found');
+      }
+      const response = await api.get('/profile/tracks/');
+      return response.data;
+    }
+    return [];
   },
 
-  // Получение популярных треков
-  getPopularTracks: async (limit = 10): Promise<PopularTrack[]> => {
-    const { data } = await api.get('/tracks/popular/', {
-      params: { limit },
-    });
-    return data;
-  },
-
-  // Поиск треков
-  searchTracks: async (query: string, genre?: string): Promise<Track[]> => {
-    const { data } = await api.get('/tracks/search/', {
-      params: { query, genre },
-    });
-    return data;
-  },
-
-  // Лайк трека
-  likeTrack: async (trackId: string): Promise<{ success: boolean }> => {
-    const { data } = await api.post(`/tracks/${trackId}/like/`);
-    return data;
-  },
-
-  // Удаление лайка
-  unlikeTrack: async (trackId: string): Promise<{ success: boolean }> => {
-    const { data } = await api.delete(`/tracks/${trackId}/like/`);
-    return data;
+  // Загрузка нового трека
+  uploadTrack: async (formData: FormData): Promise<Track> => {
+    try {
+      const { data } = await api.post('/tracks/upload/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return data;
+    } catch (error) {
+      console.error('Error uploading track:', error);
+      throw error;
+    }
   },
 
   // Удаление трека
   deleteTrack: async (trackId: string): Promise<{ success: boolean }> => {
-    const { data } = await api.delete(`/tracks/${trackId}/`);
-    return data;
+    try {
+      const { data } = await api.delete(`/tracks/${trackId}/`);
+      return data;
+    } catch (error) {
+      console.error('Error deleting track:', error);
+      throw error;
+    }
   },
 
   // Обновление информации о треке
-  updateTrack: async (trackId: string, trackData: Partial<Track>): Promise<Track> => {
-    const { data } = await api.patch(`/tracks/${trackId}/`, trackData);
-    return data;
+  updateTrack: async (trackId: string, data: Partial<Track>): Promise<Track> => {
+    try {
+      const { data: responseData } = await api.patch(`/tracks/${trackId}/`, data);
+      return responseData;
+    } catch (error) {
+      console.error('Error updating track:', error);
+      throw error;
+    }
   },
-  
+
+  // Лайк трека
+  likeTrack: async (trackId: string): Promise<{ status: string, likes_count: number, is_liked: boolean }> => {
+    try {
+      const { data } = await api.post(`/tracks/${trackId}/like/`);
+      return data;
+    } catch (error) {
+      console.error('Error liking track:', error);
+      throw error;
+    }
+  },
+
+  // Удаление лайка
+  unlikeTrack: async (trackId: string): Promise<{ status: string, likes_count: number, is_liked: boolean }> => {
+    try {
+      const { data } = await api.delete(`/tracks/${trackId}/unlike/`);
+      return data;
+    } catch (error) {
+      console.error('Error unliking track:', error);
+      throw error;
+    }
+  },
+
+  // Получение популярных треков
+  getPopularTracks: async (limit = 10): Promise<PopularTrack[]> => {
+    try {
+      const { data } = await api.get('/tracks/popular/', {
+        params: { limit },
+      });
+      return data;
+    } catch (error) {
+      console.error('Error fetching popular tracks:', error);
+      throw error;
+    }
+  },
+
+  // Поиск треков
+  searchTracks: async (query: string, genre?: string): Promise<Track[]> => {
+    try {
+      const { data } = await api.get('/tracks/search/', {
+        params: { query, genre },
+      });
+      return data;
+    } catch (error) {
+      console.error('Error searching tracks:', error);
+      throw error;
+    }
+  },
+
   // Получение треков по жанру
   getTracksByGenre: async (genre: string, limit = 20): Promise<Track[]> => {
     const { data } = await api.get('/tracks/', {

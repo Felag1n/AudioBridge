@@ -1,7 +1,11 @@
 # Импорт необходимых модулей
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Track, UserLibrary, UserProfile
+from .models import Track, UserLibrary, UserProfile, Comment
+import logging
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -108,21 +112,69 @@ class TrackSerializer(serializers.ModelSerializer):
     Сериализатор для музыкальных треков.
     """
     file_url = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Track
-        fields = ('id', 'title', 'artist', 'album', 'duration', 'file_path', 'file_url', 'created_at')
+        fields = ('id', 'title', 'artist', 'album', 'duration', 'file_path', 'file_url', 'cover', 'cover_url', 'created_at', 'user')
+        read_only_fields = ('user',)
     
     def get_file_url(self, obj):
         """
-        Формирует полный URL для аудио файла, если он доступен.
+        Формирует полный URL для аудио файла.
         """
         if obj.file_path:
             request = self.context.get('request')
-            if request and not obj.file_path.startswith(('http://', 'https://')):
-                return request.build_absolute_uri(obj.file_path)
-            return obj.file_path
+            if request:
+                # Используем абсолютный URL для медиафайлов
+                url = request.build_absolute_uri(obj.file_path.url)
+                logger.info(f"Generated file URL: {url}")
+                return url
+            
+            # Если нет request, формируем URL вручную
+            file_path = str(obj.file_path)
+            if file_path.startswith('/'):
+                file_path = file_path[1:]
+            url = f"http://localhost:8000/media/{file_path}"
+            logger.info(f"Using manual file URL: {url}")
+            return url
+            
+        logger.warning("No file_path found for track")
         return None
+
+    def get_cover_url(self, obj):
+        """
+        Формирует полный URL для обложки трека.
+        """
+        if obj.cover:
+            request = self.context.get('request')
+            if request:
+                # Используем абсолютный URL для медиафайлов
+                url = request.build_absolute_uri(obj.cover.url)
+                logger.info(f"Generated cover URL: {url}")
+                return url
+            
+            # Если нет request, формируем URL вручную
+            cover_path = str(obj.cover)
+            if cover_path.startswith('/'):
+                cover_path = cover_path[1:]
+            url = f"http://localhost:8000/media/{cover_path}"
+            logger.info(f"Using manual cover URL: {url}")
+            return url
+            
+        logger.warning("No cover found for track")
+        return None
+
+    def to_representation(self, instance):
+        """
+        Преобразует объект в словарь для сериализации.
+        """
+        data = super().to_representation(instance)
+        logger.info(f"Serialized data before removing fields: {data}")
+        # Удаляем только поле cover, так как оно содержит только путь к файлу
+        data.pop('cover', None)
+        logger.info(f"Serialized data after removing fields: {data}")
+        return data
 
 
 class UserLibrarySerializer(serializers.ModelSerializer):
@@ -142,3 +194,19 @@ class UserLibrarySerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         # Можно добавить дополнительную логику обработки
         return representation
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Comment
+        fields = ('id', 'content', 'created_at', 'user')
+        read_only_fields = ('user',)
+    
+    def get_user(self, obj):
+        profile = UserProfile.objects.get(user=obj.user)
+        return {
+            'username': obj.user.username,
+            'avatarUrl': self.context['request'].build_absolute_uri(profile.avatar.url) if profile.avatar else None
+        }

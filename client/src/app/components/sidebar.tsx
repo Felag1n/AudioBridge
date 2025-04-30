@@ -39,26 +39,30 @@ export function Sidebar() {
             Главная
           </Link>
 
-          <button
-            onClick={openSearch}
-            className="flex items-center gap-2 rounded-md p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100 text-left"
-          >
-            <Search size={20} />
-            Поиск
-          </button>
+          {user && (
+            <>
+              <button
+                onClick={openSearch}
+                className="flex items-center gap-2 rounded-md p-2 text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-100 text-left"
+              >
+                <Search size={20} />
+                Поиск
+              </button>
 
-          <Link
-            href="/chat"
-            className={cn(
-              "flex items-center gap-2 rounded-md p-2 transition-colors",
-              isActive('/chat')
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
-            )}
-          >
-            <MessageSquare size={20} />
-            Чат
-          </Link>
+              <Link
+                href="/chat"
+                className={cn(
+                  "flex items-center gap-2 rounded-md p-2 transition-colors",
+                  isActive('/chat')
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                )}
+              >
+                <MessageSquare size={20} />
+                Чат
+              </Link>
+            </>
+          )}
           
           {user && (
             <>

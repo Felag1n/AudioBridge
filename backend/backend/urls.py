@@ -10,4 +10,8 @@ urlpatterns = [
     path('api/', include('music_api.urls')),  # Все API запросы идут через /api/
     path('api/auth/login/', views.login, name='auth-login'),  # Теперь views определено
     path('', RedirectView.as_view(url='/api/', permanent=True)),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# Добавляем обработку медиафайлов в режиме разработки
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,32 +1,43 @@
 //client\src\app\services\api.ts
 import axios, { AxiosError } from 'axios';
+import { useRouter } from 'next/navigation';
 
 // Создание экземпляра axios с базовой конфигурацией
-const api = axios.create({
-  baseURL: 'http://localhost:8000/api', // Базовый URL для всех запросов
+export const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api', // Базовый URL для всех запросов
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 // Перехватчик запросов - добавляет токен авторизации к каждому запросу
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    // Check if we're in the browser environment
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Перехватчик ответов - обрабатывает ошибки авторизации
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    // При получении 401 ошибки (Unauthorized) - разлогиниваем пользователя
+  (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userData');
-      window.location.href = '/auth/login';
+      // Check if we're in the browser environment
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
+        window.location.href = '/auth/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -155,7 +166,7 @@ export const authApi = {
   // Вход в систему
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
-      const response = await api.post<AuthResponse>('/auth/login/', data);
+      const response = await api.post<AuthResponse>('/login/', data);
       if (response.data.token) {
         // Сохраняем токен и данные пользователя в localStorage
         localStorage.setItem('token', response.data.token);
@@ -177,7 +188,7 @@ export const authApi = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
-    window.location.href = '/auth/login';
+    window.location.href = '/login';
   },
 
   // Проверка авторизации
@@ -189,8 +200,7 @@ export const authApi = {
       await api.get('/verify/');
       return true;
     } catch {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userData');
+      // Не удаляем токен при ошибке проверки
       return false;
     }
   },

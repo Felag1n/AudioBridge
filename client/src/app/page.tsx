@@ -9,11 +9,12 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TrackRow } from '@/app/components/track-row';
 import { useQuery } from '@tanstack/react-query';
-import { trackApi } from './services/track-api';
+import { trackApi, Track, PopularTrack } from './services/track-api';
 import { albumApi } from './services/album-api';
-import { useAudioPlayer } from './hooks/use-audio-player';
+import { useAudioPlayer } from './components/contexts/audio-player-context';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useAuth } from '@/app/contexts/auth-context';
 
 // Обновленные данные жанров
 const genres = [
@@ -25,7 +26,15 @@ const genres = [
   { id: 6, name: 'Классика', color: 'bg-green-500' },
 ];
 
-function AlbumCard({ album }) {
+interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl?: string;
+  likesCount: number;
+}
+
+function AlbumCard({ album }: { album: Album }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -67,8 +76,9 @@ function AlbumCard({ album }) {
 }
 
 export default function Home() {
-  const { playTrack } = useAudioPlayer();
+  const { currentTrack, isPlaying, togglePlay, playTrack } = useAudioPlayer();
   const [showAllGenres, setShowAllGenres] = useState(false);
+  const { user, isLoading: isAuthLoading } = useAuth();
   
   // Запрос популярных треков
   const { data: popularTracks, isLoading: isLoadingTracks } = useQuery({
@@ -112,9 +122,14 @@ export default function Home() {
       id: track.id,
       title: track.title,
       artist: track.artist,
-      coverUrl: track.coverUrl,
-      url: track.audioUrl,
-      duration: track.duration
+      album: track.album,
+      duration: track.duration,
+      file_path: track.file_path,
+      file_url: track.file_url,
+      cover_url: track.cover_url,
+      created_at: track.created_at,
+      user: track.user,
+      is_liked: track.is_liked
     }));
     
     // Начинаем воспроизведение с первого трека
@@ -170,18 +185,35 @@ export default function Home() {
                 Случайный плейлист
               </Button>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/upload">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="gap-2 border-white text-white hover:bg-white/20"
-                >
-                  <Plus className="h-5 w-5" />
-                  Загрузить трек
-                </Button>
-              </Link>
-            </motion.div>
+            {!isAuthLoading && (
+              user ? (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link href="/upload">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="gap-2 border-white text-white hover:bg-white/20"
+                    >
+                      <Plus className="h-5 w-5" />
+                      Загрузить трек
+                    </Button>
+                  </Link>
+                </motion.div>
+              ) : (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link href="/auth/login">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="gap-2 border-white text-white hover:bg-white/20"
+                    >
+                      <Plus className="h-5 w-5" />
+                      Войдите, чтобы загрузить
+                    </Button>
+                  </Link>
+                </motion.div>
+              )
+            )}
           </div>
         </div>
       </motion.section>
@@ -325,13 +357,13 @@ export default function Home() {
                   <TrackRow 
                     key={track.id} 
                     track={{
-                      id: track.id,
+                      id: track.id.toString(),
                       title: track.title,
                       artist: track.artist,
-                      coverUrl: track.coverUrl,
-                      url: track.audioUrl,
+                      coverUrl: track.cover_url,
+                      url: track.file_url,
                       duration: track.duration,
-                      isLiked: track.isLiked
+                      isLiked: track.is_liked
                     }}
                     index={index + 1}
                     showLike
@@ -393,13 +425,13 @@ export default function Home() {
                   <TrackRow 
                     key={track.id} 
                     track={{
-                      id: track.id,
+                      id: track.id.toString(),
                       title: track.title,
                       artist: track.artist,
-                      coverUrl: track.coverUrl,
-                      url: track.audioUrl,
+                      coverUrl: track.cover_url,
+                      url: track.file_url,
                       duration: track.duration,
-                      isLiked: track.isLiked
+                      isLiked: track.is_liked
                     }}
                     showLike
                   />
