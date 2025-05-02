@@ -80,19 +80,9 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const seekTo = (time: number) => {
     if (!audioRef.current) return
     
-    // Сохраняем текущее состояние воспроизведения
-    const wasPlaying = isPlaying
-    
     // Устанавливаем новое время
     audioRef.current.currentTime = time
     setProgress(time)
-    
-    // Если трек был в состоянии воспроизведения, продолжаем воспроизведение
-    if (wasPlaying) {
-      audioRef.current.play().catch(error => {
-        console.error('Error resuming playback after seek:', error)
-      })
-    }
   }
 
   const playTrack = (track: Track) => {

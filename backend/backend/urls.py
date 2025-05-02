@@ -6,9 +6,13 @@ from django.conf.urls.static import static
 from music_api import views  # Добавить эту строку
 
 urlpatterns = [
+    # Admin URL at root level
     path('admin/', admin.site.urls),
+    
+    # API URLs
     path('api/', include('music_api.urls')),  # Все API запросы идут через /api/
-    path('api/auth/login/', views.login, name='auth-login'),  # Теперь views определено
+    
+    # Redirect root to API
     path('', RedirectView.as_view(url='/api/', permanent=True)),
 ]
 

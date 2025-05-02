@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.db import models
+from django.http import JsonResponse
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -69,10 +70,36 @@ def create_auth_response(user):
 
 @api_view(['GET'])
 def api_root(request):
-    """Корневой endpoint API."""
     return Response({
-        'register': reverse('music_api:register', request=request),
-        'login': reverse('music_api:login', request=request),
+        'message': 'Welcome to AudioBridge API',
+        'version': '1.0.0',
+        'endpoints': {
+            'auth': {
+                'register': '/api/register/',
+                'login': '/api/login/',
+                'verify': '/api/verify/',
+            },
+            'tracks': {
+                'list': '/api/tracks/',
+                'upload': '/api/tracks/upload/',
+                'recent': '/api/tracks/recent/',
+                'popular': '/api/tracks/popular/',
+            },
+            'profile': {
+                'current': '/api/profile/',
+                'user': '/api/profile/{user_id}/',
+            },
+            'library': {
+                'list': '/api/library/',
+                'add': '/api/library/add/{track_id}/',
+            },
+            'yandex': {
+                'auth': '/api/auth/yandex/',
+                'tracks': '/api/yandex/tracks/',
+                'search': '/api/yandex/tracks/search/',
+                'popular': '/api/yandex/tracks/popular/',
+            }
+        }
     })
 
 #######################################

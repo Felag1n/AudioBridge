@@ -133,7 +133,7 @@ export default function AlbumPage() {
   const formattedDuration = formatTime(getTotalDuration());
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-32">
       {/* Основная информация об альбоме */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="relative aspect-square w-full md:w-64 overflow-hidden rounded-lg">

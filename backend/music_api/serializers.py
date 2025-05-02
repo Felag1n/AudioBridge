@@ -198,15 +198,18 @@ class UserLibrarySerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    
+    text = serializers.CharField(source='content', write_only=True)
+
     class Meta:
         model = Comment
-        fields = ('id', 'content', 'created_at', 'user')
-        read_only_fields = ('user',)
-    
+        fields = ('id', 'text', 'content', 'created_at', 'user')
+        read_only_fields = ('user', 'content')
+
     def get_user(self, obj):
-        profile = UserProfile.objects.get(user=obj.user)
+        user = obj.user
+        profile = user.profile
         return {
-            'username': obj.user.username,
-            'avatarUrl': self.context['request'].build_absolute_uri(profile.avatar.url) if profile.avatar else None
+            'id': user.id,
+            'username': user.username,
+            'avatar_url': self.context['request'].build_absolute_uri(profile.avatar.url) if profile.avatar else None
         }
