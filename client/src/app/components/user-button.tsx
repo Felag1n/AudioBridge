@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
 import { Button } from "@/app/components/ui/button"
-import { useAuth } from '@/app/contexts/auth-context'
+import { useAuth } from '@/app/components/contexts/auth-context'
 import Link from "next/link"
 
 export function UserButton() {

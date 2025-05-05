@@ -1,16 +1,6 @@
 import { create } from 'zustand';
-import axios from 'axios';
-
-interface Comment {
-  id: number;
-  content: string;
-  user: {
-    id: number;
-    username: string;
-    avatar: string | null;
-  };
-  created_at: string;
-}
+import api from '../api';
+import { Comment } from '../types/comment';
 
 interface CommentState {
   comments: Comment[];
@@ -18,8 +8,8 @@ interface CommentState {
   error: string | null;
   pollInterval: NodeJS.Timeout | null;
   fetchComments: (trackId: string) => Promise<void>;
-  addComment: (trackId: string, content: string) => Promise<void>;
-  deleteComment: (commentId: number) => Promise<void>;
+  addComment: (trackId: string, text: string) => Promise<void>;
+  deleteComment: (trackId: string, commentId: number) => Promise<void>;
   startPolling: (trackId: string) => void;
   stopPolling: () => void;
 }
@@ -33,8 +23,8 @@ export const useCommentService = create<CommentState>((set, get) => ({
   fetchComments: async (trackId: string) => {
     try {
       set({ isLoading: true, error: null });
-      const response = await axios.get(`/api/tracks/${trackId}/comments/`);
-      set({ comments: response.data, isLoading: false });
+      const { data } = await api.get(`/tracks/${trackId}/comments/`);
+      set({ comments: data, isLoading: false });
     } catch (error) {
       set({ 
         error: 'Ошибка при загрузке комментариев',
@@ -44,12 +34,12 @@ export const useCommentService = create<CommentState>((set, get) => ({
     }
   },
 
-  addComment: async (trackId: string, content: string) => {
+  addComment: async (trackId: string, text: string) => {
     try {
       set({ error: null });
-      const response = await axios.post(`/api/tracks/${trackId}/comments/`, { content });
+      const { data } = await api.post(`/tracks/${trackId}/comments/`, { text });
       set((state) => ({
-        comments: [response.data, ...state.comments]
+        comments: [data, ...state.comments]
       }));
     } catch (error) {
       set({ error: 'Ошибка при отправке комментария' });
@@ -57,10 +47,10 @@ export const useCommentService = create<CommentState>((set, get) => ({
     }
   },
 
-  deleteComment: async (commentId: number) => {
+  deleteComment: async (trackId: string, commentId: number) => {
     try {
       set({ error: null });
-      await axios.delete(`/api/comments/${commentId}/`);
+      await api.delete(`/tracks/${trackId}/comments/${commentId}/`);
       set((state) => ({
         comments: state.comments.filter(comment => comment.id !== commentId)
       }));
@@ -71,16 +61,12 @@ export const useCommentService = create<CommentState>((set, get) => ({
   },
 
   startPolling: (trackId: string) => {
-    // Остановить существующий интервал, если есть
     get().stopPolling();
-    
-    // Сначала загрузим комментарии
     get().fetchComments(trackId);
     
-    // Установим интервал для периодического обновления
     const interval = setInterval(() => {
       get().fetchComments(trackId);
-    }, 5000); // Обновляем каждые 5 секунд
+    }, 5000);
     
     set({ pollInterval: interval });
   },

@@ -1,5 +1,5 @@
 import api from './api';
-import { useAuth } from '@/app/contexts/auth-context';
+import { useAuth } from '@/app/components/contexts/auth-context';
 import { AxiosError } from 'axios';
 
 export interface Track {

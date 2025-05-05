@@ -145,7 +145,20 @@ export const authApi = {
   // Регистрация нового пользователя
   register: async (data: RegisterData): Promise<AuthResponse> => {
     try {
-      const response = await api.post<AuthResponse>('/register/', data);
+      // Validate data before sending
+      if (!data.username || !data.email || !data.password) {
+        throw { message: 'Все поля обязательны для заполнения' };
+      }
+
+      if (data.password.length < 8) {
+        throw { message: 'Пароль должен содержать минимум 8 символов' };
+      }
+
+      if (!data.email.includes('@')) {
+        throw { message: 'Введите корректный email адрес' };
+      }
+
+      const response = await api.post<AuthResponse>('/auth/register/', data);
       if (response.data.token) {
         // Сохраняем токен и данные пользователя в localStorage
         localStorage.setItem('token', response.data.token);
@@ -154,10 +167,15 @@ export const authApi = {
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        throw {
-          message: error.response.data.message || 'Ошибка при регистрации',
-          errors: error.response.data.errors,
-        };
+        const errorData = error.response.data;
+        if (errorData.errors) {
+          // Handle field-specific errors
+          const errorMessages = Object.entries(errorData.errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages[0] : messages}`)
+            .join('\n');
+          throw { message: errorMessages };
+        }
+        throw { message: errorData.message || 'Ошибка при регистрации' };
       }
       throw { message: 'Ошибка сети' };
     }

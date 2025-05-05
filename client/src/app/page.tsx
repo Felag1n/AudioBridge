@@ -14,7 +14,7 @@ import { albumApi } from './services/album-api';
 import { useAudioPlayer } from './components/contexts/audio-player-context';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from '@/app/contexts/auth-context';
+import { useAuth } from '@/app/components/contexts/auth-context';
 
 // Обновленные данные жанров
 const genres = [

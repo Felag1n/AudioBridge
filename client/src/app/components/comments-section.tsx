@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Comment, commentApi } from '@/app/services/comment-api';
-import { useAuth } from '@/app/contexts/auth-context';
+import { useAuth } from '@/app/components/contexts/auth-context';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'sonner';

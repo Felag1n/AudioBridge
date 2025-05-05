@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { trackApi, Track } from "@/app/services/track-api";
 import { commentApi, Comment } from "@/app/services/comment-api";
 import { useAudioPlayer } from '@/app/components/contexts/audio-player-context';
-import { useAuth } from '@/app/contexts/auth-context';
+import { useAuth } from '@/app/components/contexts/auth-context';
 import {
   Heart,
   MessageSquare,

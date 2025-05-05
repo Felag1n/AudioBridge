@@ -41,22 +41,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
           localStorage.removeItem('userData');
+          localStorage.removeItem('token');
         }
       } catch (error) {
+        console.error('Auth check failed:', error);
         setUser(null);
         localStorage.removeItem('userData');
+        localStorage.removeItem('token');
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Only check auth if there's user data in localStorage
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      checkAuth();
-    } else {
-      setIsLoading(false);
-    }
+    // Always check auth status
+    checkAuth();
   }, []);
 
   return (

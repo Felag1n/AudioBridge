@@ -5,7 +5,7 @@ import { Sidebar } from './components/sidebar'
 import { Header } from './components/header'
 import { Player } from './components/player'
 import { Providers } from './providers'
-import { AuthProvider } from './contexts/auth-context'
+import { AuthProvider } from './components/contexts/auth-context'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 

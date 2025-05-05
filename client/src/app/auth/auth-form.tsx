@@ -23,14 +23,24 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const checkAuth = async () => {
-      const isAuthed = await authApi.checkAuth();
-      if (isAuthed) {
-        router.push('/profile');
+      const token = localStorage.getItem('token');
+      if (token) {
+        const isAuthed = await authApi.checkAuth();
+        if (isAuthed) {
+          router.push('/profile');
+        } else {
+          // Clear invalid token
+          localStorage.removeItem('token');
+          localStorage.removeItem('userData');
+        }
       }
     };
     checkAuth();
@@ -53,14 +63,57 @@ export function AuthForm({ mode }: AuthFormProps) {
     }));
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (mode === 'register') {
+      if (!formData.username) {
+        newErrors.username = 'Имя пользователя обязательно';
+      }
+      if (!formData.email) {
+        newErrors.email = 'Email обязателен';
+      } else if (!formData.email.includes('@')) {
+        newErrors.email = 'Введите корректный email';
+      }
+      if (!formData.password) {
+        newErrors.password = 'Пароль обязателен';
+      } else if (formData.password.length < 8) {
+        newErrors.password = 'Пароль должен содержать минимум 8 символов';
+      }
+      if (mode === 'register' && formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Пароли не совпадают';
+      }
+    } else {
+      if (!formData.email) {
+        newErrors.email = 'Email обязателен';
+      }
+      if (!formData.password) {
+        newErrors.password = 'Пароль обязателен';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
+    setErrors({});
   
     try {
       let response;
       if (mode === 'register') {
-        response = await authApi.register(formData);
+        response = await authApi.register({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        });
         toast.success('Регистрация успешна!');
       } else {
         response = await authApi.login({ 
@@ -70,7 +123,6 @@ export function AuthForm({ mode }: AuthFormProps) {
         toast.success('Вход выполнен успешно!');
       }
       
-      // Сохраняем данные пользователя вместе с URL аватара
       if (response.user) {
         const userData = {
           ...response.user,
@@ -82,7 +134,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       
       router.push('/profile');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Произошла ошибка');
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Произошла ошибка');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -120,36 +176,68 @@ export function AuthForm({ mode }: AuthFormProps) {
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'register' && (
+            <div className="space-y-2">
+              <Input
+                name="username"
+                placeholder="Имя пользователя"
+                value={formData.username}
+                onChange={handleChange}
+                disabled={isLoading}
+                className={`bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500 ${errors.username ? 'border-red-500' : ''}`}
+                required
+              />
+              {errors.username && (
+                <p className="text-sm text-red-500">{errors.username}</p>
+              )}
+            </div>
+          )}
+          <div className="space-y-2">
             <Input
-              name="username"
-              placeholder="Имя пользователя"
-              value={formData.username}
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={formData.email}
               onChange={handleChange}
               disabled={isLoading}
-              className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500"
+              className={`bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500 ${errors.email ? 'border-red-500' : ''}`}
               required
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Input
+              name="password"
+              type="password"
+              placeholder="Пароль"
+              value={formData.password}
+              onChange={handleChange}
+              disabled={isLoading}
+              className={`bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500 ${errors.password ? 'border-red-500' : ''}`}
+              required
+            />
+            {errors.password && (
+              <p className="text-sm text-red-500">{errors.password}</p>
+            )}
+          </div>
+          {mode === 'register' && (
+            <div className="space-y-2">
+              <Input
+                name="confirmPassword"
+                type="password"
+                placeholder="Подтвердите пароль"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                disabled={isLoading}
+                className={`bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                required
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+              )}
+            </div>
           )}
-          <Input
-            name="email"
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={isLoading}
-            className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500"
-            required
-          />
-          <Input
-            name="password"
-            type="password"
-            placeholder="Пароль"
-            value={formData.password}
-            onChange={handleChange}
-            disabled={isLoading}
-            className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-400 focus:border-purple-500 focus:ring-purple-500"
-            required
-          />
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-medium" 
